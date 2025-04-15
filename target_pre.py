@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 # %%
 # Read file 
-df = pd.read_excel('Data/raw_data_1903.xlsx', sheet_name = 'Sheet1')
+df = pd.read_excel('tata/raw_data_1903.xlsx', sheet_name = 'Sheet1')
 df = df.fillna(0)
 df = df.replace(0,1)
 
