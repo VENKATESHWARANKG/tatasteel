@@ -602,7 +602,7 @@ df_cmgr[['Dealer_Code',
          'Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales',
          'Apr_2425_Target','May_2425_Target','Jun_2425_Target', 
          'Jul_2425_Target', 'Aug_2425_Target','Sep_2425_Target',
-         'Achieved_Type','Predicted_Target',]].to_csv('Data/test_0104_2.csv')
+         'Achieved_Type','Predicted_Target',]].to_csv('tata/test_0104_2.csv')
 
 
 

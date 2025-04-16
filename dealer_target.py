@@ -178,7 +178,7 @@ input_data['Incentive_per_Ton_linear'] = input_data['Tier'].map(tier_incentives)
 tier_incentives = get_tier_incentives('exponential', min_incentive, max_incentive)
 input_data['Incentive_per_Ton_exponential'] = input_data['Tier'].map(tier_incentives)
 
-input_data.to_csv("Data/output.csv")
+input_data.to_csv("tata/output.csv")
 
 # -------- 
 
@@ -217,7 +217,7 @@ input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data[
 #input_data["dealer_type"] =  input_data["dealer_type"].fillna("Non-Exclusive")
 #input_data["AVG_SALES-N"] = input_data["AVG_SALES-N"].round(0)
 df = input_data
-df.to_csv('Data/output.csv')
+df.to_csv('tata/output.csv')
 
 column_labels = {
     "Dealer_Code": "Dealer Code",
