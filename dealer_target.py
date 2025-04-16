@@ -84,6 +84,7 @@ st.markdown(
     .center-title {
         text-align: center;
         font-size: 30px;
+        margin-top: 50px;  /* Adjust this value to move the title further down */
     }
     </style>
     <div class="center-title">
