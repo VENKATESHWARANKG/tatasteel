@@ -12,12 +12,12 @@ import pandas as pd
 import altair as alt
 
 
-st.set_page_config(
-    page_title="Dealer Incentive Dashboard",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# st.set_page_config(
+#     page_title="Dealer Incentive Dashboard",
+#     page_icon="📊",
+#     layout="wide",
+#     initial_sidebar_state="expanded"
+# )
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
