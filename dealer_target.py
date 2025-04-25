@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
 from datetime import datetime
-import streamlit as st
-import pandas as pd
 import altair as alt
 
 
@@ -48,20 +46,20 @@ def get_tier_incentives(method, min_inc_per_ton, max_inc_per_ton):
 
 st.set_page_config(
     page_title="Dealer Incentive Dashboard",
-    page_icon="📊",
+    page_icon="📊tata steel",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# st.markdown("""
-#     <style>
-#     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-#     html, body, [class*="css"] {
-#         font-family: 'Inter', sans-serif;
-#     }
-#     </style>
-# """, unsafe_allow_html=True)
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 
 # ---- Custom CSS for Full-Screen Mode & Image Positioning ----
@@ -69,10 +67,10 @@ st.markdown(
     """
     <style>
         .main .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 90% !important;
-            width: 90vw !important;
+            padding: 10px;
+            margin: 10px ;
+            max-width: 90% ;
+            width: 90vw ;
         }
         .top-right-image {
             position: absolute;
@@ -391,14 +389,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-        # with col4:
-        #     st.markdown(f"""
-        #     <div class='kpi-card'>
-        #         <h4>Max Payout</h4>
-        #         <p>₹{df_to_display['Previous Months'].max():,.0f}</p>
-        #     </div>
-        #     """, unsafe_allow_html=True)
-
+ 
         st.data_editor(df_to_display, key="dealer_table", height=1200)
 
 # Target Distribution Analysis
@@ -499,16 +490,6 @@ input_data["Target_Growth_%"] = input_data["Target_Growth_%"].round(2).fillna(0)
 input_data["Recent_Achievement_%"] = input_data["Recent_Achievement_%"].round(2).fillna(0)
 input_data["Previous_Achievement_%"] = input_data["Previous_Achievement_%"].round(2).fillna(0)
 
-# # Add a Growth Indicator
-# def get_growth_arrow(row):
-#     if row["Sales_Growth_%"] > 5 and row["Recent_Achievement_%"] >= 100:
-#         return "↑ Growth"
-#     elif abs(row["Sales_Growth_%"]) <= 5: #Check Logic
-#         return "→ Stable"
-#     else:
-#         return "↓ Drop"
-
-# input_data["Growth_Indicator"] = input_data.apply(get_growth_arrow, axis=1)
 
 # Final table for review
 growth_df = input_data[[
@@ -626,179 +607,3 @@ with tab2:
     unsafe_allow_html=True
     )
 
-
-
-
-# Assuming sales_df_melted and target_df_melted are already defined as shown previously
-
-# # Tab for Visual
-# with tab4:
-#     # Inject the style into Streamlit
-#     st.markdown(kpi_style, unsafe_allow_html=True)
-
-# # KPI display columns
-#     col4, col5, col6 = st.columns(3)
-
-
-#     with col4:
-#         st.markdown(f"""
-#         <div class='kpi-card'>
-#             <h4>Growing Dealers Count</h4>
-#             <p>{growth_df[growth_df["Growth_Indicator"] == "↑ Growth"].shape[0]}</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-
-#     with col5:
-#         st.markdown(f"""
-#         <div class='kpi-card'>
-#             <h4>Stable Dealers Count</h4>
-#             <p>{growth_df[growth_df["Growth_Indicator"] == "→ Stable"].shape[0]}</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-
-#     with col6:
-#         st.markdown(f"""
-#         <div class='kpi-card'>
-#             <h4>Drop Dealers Count</h4>
-#             <p>{growth_df[growth_df["Growth_Indicator"] == "↓ Drop"].shape[0]}</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-
-
-    # # Step 1: Prepare and simplify category labels
-    # label_map = {
-    #     "Consistently Strong Performer": "Strong",
-    #     "Consistently Weak Performer": "Weak",
-    #     "Declining Performer": "Declining",
-    #     "Emerging Performer": "Emerging",
-    #     "Fluctuating Performer": "Fluctuating",
-    #     "Momentum Gainer": "Momentum",
-    #     "Target-Oriented Performer": "Targeted"
-    # }
-
-    # category_counts = (
-    #     growth_df["Category_Overall"]
-    #     .map(label_map)
-    #     .value_counts()
-    #     .reset_index()
-    # )
-    # category_counts.columns = ["Category", "Count"]
-    # category_counts["Percentage"] = (category_counts["Count"] / category_counts["Count"].sum() * 100).round(1)
-    # category_counts["Label"] = category_counts["Percentage"].astype(str) + "%"
-
-    # # Step 2: Green gradient (dark to light)
-    # green_gradient = [
-    #     "#00441b",  # Strong
-    #     "#1b7837",  # Weak
-    #     "#238b45",  # Declining
-    #     "#41ab5d",  # Emerging
-    #     "#74c476",  # Fluctuating
-    #     "#a1d99b",  # Momentum
-    #     "#c7e9c0"   # Targeted
-    # ]
-
-    # # Step 3: Pie chart
-    # pie = alt.Chart(category_counts).mark_arc(innerRadius=60, outerRadius=120).encode(
-    #     theta=alt.Theta("Count:Q", stack=True),
-    #     color=alt.Color("Category:N", scale=alt.Scale(range=green_gradient), legend=alt.Legend(title="Category")),
-    #     tooltip=["Category", "Count", "Percentage"]
-    # )
-
-    # # Step 4: Add properly aligned percentage labels using mark_text
-    # text = alt.Chart(category_counts).mark_text(radius=140, fontSize=13, color="black").encode(
-    #     theta=alt.Theta("Count:Q", stack=True),
-    #     text=alt.Text("Label:N")
-    # )
-
-    # # Combine
-    # final_chart = (pie + text).properties(
-    #     width=400,
-    #     height=400,
-    #     title="Dealer Category Distribution (Growth-Based)"
-    # )
-
-    # st.altair_chart(final_chart, use_container_width=True)
-
-
-    # # Step 2: Melt the data to long format for plotting
-    # aggregated_data_melted = aggregated_data.melt(id_vars='Month', value_vars=['Sales', 'Target'], var_name='variable', value_name='value')
-
-    # # Ensure that 'Month' is a datetime object
-    # aggregated_data_melted['Month'] = pd.to_datetime(aggregated_data_melted['Month'], format='%b-%y')
-
-    # # Step 3: Plot using Altair
-    # chart = alt.Chart(aggregated_data_melted).mark_line().encode(
-    #     x=alt.X('Month:T', title='Month', sort=None,
-    #             axis=alt.Axis(format='%b %y', labelFlush=False)),  # This line is the key!
-    #     y=alt.Y('value:Q', title='Value'),
-    #     color='variable:N',
-    #     tooltip=[alt.Tooltip('Month:T', title='Month', format='%b %Y'), 'variable', 'value']
-    # ).properties(
-    #     title=''
-    # ).configure_axis(
-    #     labelAngle=0
-    # )
-
-
-    # # Configure axis to ensure readability
-    # chart = chart.configure_axis(
-    #     labelAngle=0  # Ensure horizontal labels for clarity
-    # )
-
-    # st.markdown("##### Sales vs. Target Over Time (February 2024 to January 2025")
-    # # Display the chart in Streamlit
-    # st.altair_chart(chart, use_container_width=True)
-
-    # st.markdown("##### Filter Graph by State")
-    #     # Region selector
-    # region = st.radio("Select Region", ["Andhra Pradesh", "Telangana"])
-
-    # # Filter dealers based on prefix
-    # if region == "Andhra Pradesh":
-    #     region_dealers = october[october['Dealer_Code'].str.startswith("SIPA")]
-    # else:
-    #     region_dealers = october[october['Dealer_Code'].str.startswith("SIPT")]
-
-    # # Group by district
-    # district_grouped = region_dealers.groupby("dealer_district").agg({
-    #     'Predicted_Target_R': 'sum',
-    #     'Oct_2425_Target': 'sum'
-    # }).reset_index()
-
-    # # Melt for plotting
-    # melted_df = district_grouped.melt(
-    #     id_vars='dealer_district',
-    #     value_vars=['Predicted_Target_R', 'Oct_2425_Target'],
-    #     var_name='Target_Type',
-    #     value_name='Target_Value'
-    # )
-
-    # # Map names
-    # target_type_map = {
-    #     'Predicted_Target_R': 'Predicted Target',
-    #     'Oct_2425_Target': 'Actual Target'
-    # }
-    # melted_df['Target_Type'] = melted_df['Target_Type'].map(target_type_map)
-
-    # # Plot: Side-by-side bar chart
-    # chart = alt.Chart(melted_df).mark_bar().encode(
-    #     x=alt.X('dealer_district:N', title='District', axis=alt.Axis(labelAngle=90, labelOverlap=False)),
-    #     y=alt.Y('Target_Value:Q', title='Target Value'),
-    #     color=alt.Color('Target_Type:N', title='Target Type'),
-    #     tooltip=['dealer_district', 'Target_Type', 'Target_Value']
-    # ).properties(
-    #     width=800,
-    #     height=400,
-    #     title=""
-    # ).configure_view(
-    #     continuousWidth=800,
-    #     continuousHeight=400
-    # )
-
-    # st.markdown(f"##### {region} Predicted vs Actual Targets by District (October 2024)")
-    # st.altair_chart(chart, use_container_width=True)
-
-            
-
-
-# st.data_editor(df_to_display, key="dealer_table_1")
