@@ -281,7 +281,7 @@ with tab1:
         # Apply additional incentive based on category
         input_data["Final_Incentive"] = round(input_data["Incentive_per_Ton_exponential"] * (1 + input_data["Category_Overall"].map(category_bonus).fillna(0)))
         input_data["Perfomance_Bonus"] =  input_data["Final_Incentive"] - input_data["Incentive_per_Ton_exponential"] 
-        input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target_R"]).round(-1)
+        input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target"]).round(-1)
         #input_data["dealer_type"] =  input_data["dealer_type"].fillna("Non-Exclusive")
         #input_data["AVG_SALES-N"] = input_data["AVG_SALES-N"].round(0)
         df = input_data
@@ -314,7 +314,7 @@ with tab1:
             "Incentive_per_Ton_exponential": "Base Incentive",
             "Perfomance_Bonus": "Perfomance Bonus",
             "Final_Incentive" : "Final Incentive",
-            "Predicted_Target_R" : "Predicted Target",
+            "Predicted_Target" : "Predicted Target",
             "Predicted_Incentive": "Predicted Incentive"
         }
 
@@ -329,7 +329,7 @@ with tab1:
             "Category_Overall",
             "Tier",
             "Jan_2425_Target",
-            "Predicted_Target_R",
+            "Predicted_Target",
             "Incentive_per_Ton_exponential",
             "Perfomance_Bonus",
             "Final_Incentive",
@@ -414,12 +414,12 @@ with tab1:
 # Target Distribution Analysis
 summary_table = (
     input_data
-    .groupby("Achieved_Type")[["Jan_2425_sales", "Jan_2425_Target", "Predicted_Target_R"]]
+    .groupby("Achieved_Type")[["Jan_2425_sales", "Jan_2425_Target", "Predicted_Target"]]
     .sum()
     .rename(columns={
         "Jan_2425_sales": "January 2025 Sales",
         "Jan_2425_Target": "January 2025 Target",
-        "Predicted_Target_R": "Predicted Target"
+        "Predicted_Target": "Predicted Target"
     })
     .reset_index()
 )
