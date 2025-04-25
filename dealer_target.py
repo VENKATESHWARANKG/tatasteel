@@ -134,7 +134,7 @@ st.title("Dealer Incentive Allocation")
 # ---- Load CSV File ----
 # load input file for incentive calculation
 input_data = pd.read_csv('Data/dealer_incentive_model_v2.csv')
-prev_data = pd.read_csv('Data/prev_oct_predicted_target.csv')
+# prev_data = pd.read_csv('Data/prev_oct_predicted_target.csv')
 
 
 try:
@@ -468,23 +468,16 @@ def highlight_total_row(row):
     return ['' for _ in row]
 
 
+with tab3:
 
-
-#Growth Indicator
-
-# # Define recent and previous month groups
-#6 months
-# recent_months_sales = ["Aug_2425_sales", "Sep_2425_sales", "Oct_2425_sales", "Nov_2425_sales", "Dec_2425_sales", "Jan_2425_sales"]
-# previous_months_sales = ["Feb_2324_sales", "Mar_2324_sales", "Apr_2425_sales", "May_2425_sales", "Jun_2425_sales", "Jul_2425_sales"]
+    # st.data_editor(target_sales_cross,key="cross_table")
+    st.subheader("January 2025 Summary by Achievement Type")
+    st.dataframe(summary_table.style.apply(highlight_total_row, axis=1), use_container_width=True)
 
 #3 months
 recent_months_sales = ["Nov_2425_sales", "Dec_2425_sales", "Jan_2425_sales"]
 previous_months_sales = ["Aug_2425_sales", "Sep_2425_sales", "Oct_2425_sales"]
 
-#6
-# recent_months_target = ["Aug_2425_Target", "Sep_2425_Target", "Oct_2425_Target", "Nov_2425_Target", "Dec_2425_Target", "Jan_2425_Target"]
-# previous_months_target = ["Feb_2324_Target", "Mar_2324_Target", "Apr_2425_Target", "May_2425_Target", "Jun_2425_Target", "Jul_2425_Target"]
-#3
 recent_months_target = ["Nov_2425_Target", "Dec_2425_Target", "Jan_2425_Target"]
 previous_months_target = ["Aug_2425_Target", "Sep_2425_Target", "Oct_2425_Target"]
 
@@ -526,16 +519,6 @@ target_sales_cross = pd.crosstab(growth_df["Category_Overall"], growth_df["Achie
 target_sales_cross = target_sales_cross.reindex(columns=ordered_achievements, fill_value=0)
 
 target_sales_cross.index.name = None
-
-
-
-
-with tab3:
-
-    # st.data_editor(target_sales_cross,key="cross_table")
-    st.subheader("January 2025 Summary by Achievement Type")
-    st.dataframe(summary_table.style.apply(highlight_total_row, axis=1), use_container_width=True)
-
 
 with tab2:
 
@@ -622,4 +605,6 @@ with tab2:
     """,
     unsafe_allow_html=True
     )
+
+#Visualizations
 
