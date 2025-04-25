@@ -625,6 +625,12 @@ df_cmgr['Predicted_Target'] = df_cmgr.apply(lambda row:
 
 df_cmgr['Predicted_Target_R'] = (df_cmgr['Predicted_Target'] / 5).apply(np.ceil).fillna(0).astype(int) * 5
 
+# Calculate the total of the predicted target rounded values
+total_predicted_target = df_cmgr['Predicted_Target_R'].sum()
+
+# Calculate percentage distribution of the predicted target
+df_cmgr['Percentage_PT_Dist'] = df_cmgr['Predicted_Target_R'] / total_predicted_target
+
 
 last_6_months = ['Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
 df_cmgr['Last_3_Month_Sal'] = df_cmgr[last_6_months].sum(axis=1)
@@ -836,13 +842,13 @@ df_cmgr = df_cmgr[['Dealer_Code',
          'Jun_2425_Target','Jul_2425_Target', 'Aug_2425_Target','Sep_2425_Target',
          'Oct_2425_Target','Nov_2425_Target','Dec_2425_Target','Jan_2425_Target',
          'Sales_Pattern_Overall', 'Target_Pattern_Overall',
-         'Achieved_Type','Predicted_Target','Predicted_Target_R', 'Category_Overall']]
+         'Achieved_Type','Predicted_Target','Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall']]
     #.to_csv('output/predicted_target_0204_0.csv')
 
 # Merge metrics from df_cmgr into df_display_sales_targets
 df_display_final = df_display_sales_targets.merge(
     df_cmgr[['Dealer_Code', 'Sales_Pattern_Overall', 'Target_Pattern_Overall',
-             'Achieved_Type', 'Predicted_Target_R', 'Category_Overall']],
+             'Achieved_Type', 'Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall']],
     on='Dealer_Code',
     how='left'
 )
@@ -881,6 +887,13 @@ last_6_months = sales_columns[-6:]  # Picks the last 6 sales columns
 # Calculate the average sales for the last 6 months
 df_final['AVG_SALES'] = df_final[last_6_months].mean(axis=1)
 df_display_final['AVG_SALES'] = df_final['AVG_SALES']
+
+# Select last 12 months dynamically
+last_12_months = sales_columns[-12:]  # Picks the last 6 sales columns
+
+# Calculate the average sales for the last 12 months
+df_final['AP_12'] = df_final[last_12_months].mean(axis=1)
+df_display_final['AP_12'] = df_final['AP_12']
 
 last_month_sales = sales_columns[-1:] 
 df['Last_month_sales'] = df[last_month_sales]
@@ -931,7 +944,8 @@ df_final = df_final[['Dealer_Code','Dealer_Name','dealer_district','dealer_type'
          'Jun_2425_Target','Jul_2425_Target','Aug_2425_Target','Sep_2425_Target',
          'Oct_2425_Target','Nov_2425_Target','Dec_2425_Target','Jan_2425_Target',
          'Sales_Pattern_Overall', 'Target_Pattern_Overall',
-         'Achieved_Type', 'Predicted_Target_R', 'Category_Overall',
+         'Achieved_Type', 'Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall',
+         'new_market_potential', 'AP_12',
          'NORM_counter_market_ratio','NORM_sales_by_counter_3M',
          'AVG_SALES-N','MarketSizePer1000_N']]
 
@@ -943,7 +957,8 @@ df_display_final = df_display_final[['Dealer_Code','Dealer_Name','dealer_distric
          'Jun_2425_Target','Jul_2425_Target','Aug_2425_Target','Sep_2425_Target',
          'Oct_2425_Target','Nov_2425_Target','Dec_2425_Target','Jan_2425_Target',
          'Sales_Pattern_Overall', 'Target_Pattern_Overall',
-         'Achieved_Type', 'Predicted_Target_R', 'Category_Overall',
+         'Achieved_Type', 'Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall',
+         'new_market_potential', 'AP_12',
          'NORM_counter_market_ratio','NORM_sales_by_counter_3M',
          'AVG_SALES-N','MarketSizePer1000_N']]
 

@@ -11,22 +11,6 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-# st.set_page_config(
-#     page_title="Dealer Incentive Dashboard",
-#     page_icon="📊",
-#     layout="wide",
-#     initial_sidebar_state="expanded"
-# )
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 
 # --------- Supporting functions
 
@@ -60,6 +44,25 @@ def get_tier_incentives(method, min_inc_per_ton, max_inc_per_ton):
         }
 
 
+#Page configuration
+
+st.set_page_config(
+    page_title="Dealer Incentive Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# st.markdown("""
+#     <style>
+#     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+#     html, body, [class*="css"] {
+#         font-family: 'Inter', sans-serif;
+#     }
+#     </style>
+# """, unsafe_allow_html=True)
+
 
 # ---- Custom CSS for Full-Screen Mode & Image Positioning ----
 st.markdown(
@@ -68,8 +71,8 @@ st.markdown(
         .main .block-container {
             padding: 0 !important;
             margin: 0 !important;
-            max-width: 100% !important;
-            width: 100vw !important;
+            max-width: 90% !important;
+            width: 90vw !important;
         }
         .top-right-image {
             position: absolute;
@@ -82,6 +85,35 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+kpi_style = """
+<style>
+.kpi-card {
+    background-color: #e0f7fa;  /* Light soft blue/white background */
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-family: 'Segoe UI', sans-serif;
+    color: #2a2a2a;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+
+.kpi-card p {
+    font-size: 1.5rem;  /* Value size */
+    font-weight: bold;
+    color: #1f4e79;  /* Strong blue for the numbers */
+    margin: 0;
+}
+
+.kpi-card h4 {
+    font-size: 0.85rem; /* Label size */
+    font-weight: 500;
+    color: #6c757d;  /* Soft grey for label */
+    margin: 5px 0 0;
+}
+</style>
+"""
 
 # ---- Function to Display Logo at the Top Right ----
 def display_logo(base64_string):
@@ -128,279 +160,246 @@ input_data = pd.merge(
         how='inner'  # or 'left' depending on your needs
     )
 
-
-
-# ---- Sidebar Inputs ----
-st.sidebar.markdown("# **Incentive Configuration**")
-
-# ---- Input Fields for Incentive Range ----
-st.sidebar.markdown("## **Set Incentive Range**")
-min_incentive = st.sidebar.number_input("Minimum Incentive", min_value=100, max_value=5000, value=500, step=100)
-max_incentive = st.sidebar.number_input("Maximum Incentive", min_value=100, max_value=10000, value=2000, step=100)
-
-
- 
-if min_incentive> max_incentive:
-    st.warning("⚠️ Please make sure your minimum incentive value is greater than your maximum incentive value.")
-    st.stop()
- 
-# ---- Weightage Inputs ----
-weights = {}
-st.sidebar.markdown("## **Set Weightages**")
-
-st.sidebar.markdown(
-    """
-    <div style='font-size: 12px; padding: 5px 10px; background-color: #e0f7fa; border-left : 5px solid #1f4e79; border-radius: 5px;  margin-bottom: 10px;'>
-        <strong>Sum should be 100%</strong>
+with st.expander("🔍 Tab Descriptions & Purpose"):
+    st.markdown("""
+    <div style="font-size: 12px;">
+        • <strong>Master View</strong>: Review the complete dataset and final predicted incentive outputs per dealer.  
+        • <strong>Dealer Performance Analysis</strong>: Filter dealers by performance and target achievement, with a view of their sales/target growth over recent quarters.  
+        • <strong>Target Distribution</strong>: Analyze how predicted targets and actuals are distributed across achievement categories, with a summary table.
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    """, unsafe_allow_html=True)
+
+#tabs
+tab1, tab3, tab2= st.tabs(["Master View", "Target Distribution", "Dealer Performance Analysis"])
+
+# ---- Display Data Table ----
+with tab1:
+
+    col_sidebar, col_kpi_table = st.columns([0.8, 3.2])
+
+    with col_sidebar:
+        # ---- Incentive Configuration ----
+        st.markdown("#### **Incentive Configuration**")
+
+        # ---- Input Fields for Incentive Range ----
+        st.markdown("**Set Incentive Range**")
+        min_incentive = st.number_input("Minimum Incentive", min_value=100, max_value=5000, value=500, step=100)
+        max_incentive = st.number_input("Maximum Incentive", min_value=100, max_value=10000, value=2000, step=100)
+        
+        # if min_incentive > max_incentive:
+        #     st.warning("⚠️ Please make sure your minimum incentive value is greater than your maximum incentive value.")
+        #     st.stop()
+
+        # ---- Weightage Inputs ----
+        weights = {}
+        st.markdown("**Set Weightages**")
+
+        st.markdown(
+            """
+            <div style='font-size: 12px; font-color: #1f4e79; padding: 5px 10px; background-color: #e0f7fa; border-left : 5px solid #1f4e79; border-radius: 5px;  margin-bottom: 10px;'>
+                <strong><span style='color: #1f4e79;'>Sum of weigths should be 100%</span></strong>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        weights['mpa'] = st.number_input("Market potential Achieved", min_value=0, max_value=100, value=20)
+        weights['sob'] = st.number_input("Share of Business", min_value=0, max_value=100, value=20)
+        weights['asp'] = st.number_input("Average Sales", min_value=0, max_value=100, value=60)
+
+        # ---- Validate Weightage Sum ----
+        total_weight = weights['mpa'] + weights['sob'] + weights['asp']
+
+        # if total_weight != 100:
+        #     st.warning("⚠️ Please adjust the inputs so that the total weightage is exactly 100%.")
+        #     st.stop()
+
+        # ---- Performance Weightages ----
+        st.markdown("**Performance Weightages**")
+        Consistently_Strong_Performer = st.number_input("Consistently Strong Performer", min_value=0, max_value=100, value=0)
+        Emerging_Performer = st.number_input("Emerging Performer", min_value=0, max_value=100, value=0)
+        Target_oriented_performer = st.number_input("Target-Oriented Performer", min_value=0, max_value=100, value=0)
+        Momentum_gainer = st.number_input("Momentum Gainer", min_value=0, max_value=100, value=0)
+        Consistently_Weak_Performer = st.number_input("Consistently Weak Performer", min_value=0, max_value=100, value=0)
+        Fluctuating_Performer = st.number_input("Fluctuating Performer", min_value=0, max_value=100, value=0)
+        Declining_Performer = st.number_input("Declining Performer", min_value=0, max_value=100, value=0)
+
+        # ---- Calculate Metrics --------
+        input_data['MPA'] = (input_data['CS'].astype(float) / input_data['new_market_potential'].astype(float)) * 100
+        input_data['SOB'] = (input_data['AP_12'].astype(float) / input_data['CS'].astype(float)) * 100
+        input_data['MPA'] = input_data['MPA'].clip(upper=100)
+        input_data['SOB'] = input_data['SOB'].clip(upper=100)
+        input_data['AP_normalized'] = (input_data['AP_12'] - input_data['AP_12'].min()) / (input_data['AP_12'].max() - input_data['AP_12'].min())
+        input_data['AP_normalized'] = input_data['AP_normalized'] * 100
+
+        # ------- Calculate dealer score ----------
+        input_data['Score'] = input_data.apply(lambda row: calculate_score(row, weights), axis=1)
+
+        # Calculate tier
+        input_data['Tier'] = pd.qcut(
+            input_data['Score'],
+            q=6,
+            labels=[f'Tier {i}' for i in range(6, 0, -1)]  # ['Tier 6', ..., 'Tier 1']
+        )
+
+        # Calculate incentive tier - linear
+        tier_incentives = get_tier_incentives('linear', min_incentive, max_incentive)
+        input_data['Incentive_per_Ton_linear'] = input_data['Tier'].map(tier_incentives)
+
+        # Calculate incentive tier - exponential
+        tier_incentives = get_tier_incentives('exponential', min_incentive, max_incentive)
+        input_data['Incentive_per_Ton_exponential'] = input_data['Tier'].map(tier_incentives)
+
+        # Define additional percentage based on Category_Overall
+        category_bonus = {
+            "Consistently Strong Performer": Consistently_Strong_Performer / 100,  # 10%
+            "Emerging Performer": Emerging_Performer / 100,  # 3%
+            "Target-Oriented Performer": Target_oriented_performer / 100,  # 3%
+            "Momentum Gainer": Momentum_gainer / 100,
+            "Consistently Weak Performer": Consistently_Weak_Performer / 100,
+            "Fluctuating Performer": Fluctuating_Performer / 100,
+            "Declining Performer": Declining_Performer / 100
+        }
+
+        # Apply additional incentive based on category
+        input_data["Final_Incentive"] = round(input_data["Incentive_per_Ton_exponential"] * (1 + input_data["Category_Overall"].map(category_bonus).fillna(0)))
+        input_data["Perfomance_Bonus"] =  input_data["Final_Incentive"] - input_data["Incentive_per_Ton_exponential"] 
+        input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target_R"]).round(-1)
+        #input_data["dealer_type"] =  input_data["dealer_type"].fillna("Non-Exclusive")
+        #input_data["AVG_SALES-N"] = input_data["AVG_SALES-N"].round(0)
+        df = input_data
+
+        # Get the columns in `input_data` that are not in `display_data`
+        missing_columns = [col for col in input_data.columns if col not in df_dis.columns]
+
+        # Step 2: Merge only the missing columns from `input_data` into `display_data`
+        # We merge on 'Dealer_Code', assuming it exists in both dataframes
+        display_data = pd.merge(
+            df_dis,
+            input_data[['Dealer_Code'] + missing_columns],  # Include 'Dealer_Code' + the missing columns
+            on='Dealer_Code',
+            how='left'  # Use left join to keep all rows in display_data intact
+        )
 
 
-#MarketSizePer1000_N_weightage = st.sidebar.number_input("Market size per 1000", min_value=0, max_value=100, value=0)
-weights['mpa'] = st.sidebar.number_input("Market potential Acheived", min_value=0, max_value=100, value=20)
-weights['sob'] = st.sidebar.number_input("Share of Business", min_value=0, max_value=100, value=20)
-weights['asp'] = st.sidebar.number_input("Average sales", min_value=0, max_value=100, value=60)
+        display_data.to_csv('Data/output.csv')
+
+        column_labels = {
+            "Dealer_Code": "Dealer Code",
+            "Dealer_Name": "Dealer Name",
+            "dealer_district": "District",
+            "dealer_taluka" : "Taluka",
+            "dealer_type": "Dealer Type",
+            "Achieved_Type":"Target Achievement",
+            "Category_Overall" : "Sales Performance",
+            "Jan_2425_Target" : "Previous Month's Target",
+            "Tier": "Incentive Tier",
+            "Incentive_per_Ton_exponential": "Base Incentive",
+            "Perfomance_Bonus": "Perfomance Bonus",
+            "Final_Incentive" : "Final Incentive",
+            "Predicted_Target_R" : "Predicted Target",
+            "Predicted_Incentive": "Predicted Incentive"
+        }
+
+        # ---- Default (core) columns using internal names ----
+        default_columns = [
+            "Dealer_Code",
+            "Dealer_Name",
+            "dealer_district",
+            "dealer_taluka",
+            "dealer_type",
+            "Achieved_Type",
+            "Category_Overall",
+            "Tier",
+            "Jan_2425_Target",
+            "Predicted_Target_R",
+            "Incentive_per_Ton_exponential",
+            "Perfomance_Bonus",
+            "Final_Incentive",
+            "Predicted_Incentive",
+            
+        ]
+
+        incentive_columns = [
+            "Dealer_Code",
+            "Dealer_Name",
+            # "dealer_district",
+            # "dealer_taluka",
+            # "dealer_type",
+            # "Achieved_Type",
+            # "Category_Overall",
+            "Tier",
+            # "Jan_2425_Target",
+            # "Predicted_Target_R",
+            "Incentive_per_Ton_exponential",
+            "Perfomance_Bonus",
+            "Final_Incentive",
+            "Predicted_Incentive",
+            
+        ]
+
+        # ---- Identify additional columns ----
+        all_columns = df.columns.tolist()
+        extra_columns = list(set(all_columns) - set(default_columns))
+
+        
+
+        # ---- Final display columns ----
+        display_columns = default_columns
+        #+ selected_extra_columns
+        df_to_display = df[display_columns].rename(columns=column_labels)
+        df_incentive = df[incentive_columns].rename(columns=column_labels)
 
 
+    with col_kpi_table:
 
+        if min_incentive > max_incentive:
+            st.warning("⚠️ Please make sure your minimum incentive value is greater than your maximum incentive value.")
+            st.stop()
 
-# ---- Validate Weightage Sum ----
-total_weight = (
-weights['mpa'] + 
-weights['sob'] +
-weights['asp']
-)
+        if total_weight != 100:
+            st.warning("⚠️ Please adjust the inputs so that the total weightage is exactly 100%.")
+            st.stop()
 
+        # Inject the style into Streamlit
+        st.markdown(kpi_style, unsafe_allow_html=True)
 
-if total_weight != 100:
-    st.warning("⚠️ Please adjust the inputs so that the total weightage is exactly 100%.")
-    st.stop()
+        # KPI display columns
+        col1, col2, col3 = st.columns(3)
 
-# st.sidebar.write(f"**Total Weightage: {total_weight}% (Must be 100%)**")
+        with col1:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <p>{df_to_display['Dealer Name'].nunique()}</p>
+                <h4>Number of Dealers</h4>
+            </div>
+            """, unsafe_allow_html=True)
 
+        with col2:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <p>₹{df_to_display['Predicted Incentive'].sum()/10000000:,.2f} Cr</p>
+                <h4>Total Predicted Incentive</h4>
+            </div>
+            """, unsafe_allow_html=True)
 
-# st.sidebar.info("**Sum should be 100%**")
+        with col3:
+            st.markdown(f"""
+            <div class='kpi-card'>            
+                <p>{df_to_display['Predicted Target'].sum():,}</p>
+                <h4>Total Predicted Target (MT)</h4>
+            </div>
+            """, unsafe_allow_html=True)
 
-st.sidebar.markdown("## **Performance Weightages**")
-Consistently_Strong_Performer = st.sidebar.number_input("Consistently strong performer", min_value=0, max_value=100, value=0)
-Emerging_Performer = st.sidebar.number_input("Emerging performer", min_value=0, max_value=100, value=0)
-Target_oriented_performer = st.sidebar.number_input("Target oriented performer", min_value=0, max_value=100, value=0)
-Momentum_gainer = st.sidebar.number_input("Momentum gainer", min_value=0, max_value=100, value=0)
-Consistently_Weak_Performer = st.sidebar.number_input("Consistently Weak Performer", min_value=0, max_value=100, value=0)
-Fluctuating_Performer = st.sidebar.number_input("Fluctuating Performer", min_value=0, max_value=100, value=0)
-Declining_Performer = st.sidebar.number_input("Declining Performer", min_value=0, max_value=100, value=0)
+        # with col4:
+        #     st.markdown(f"""
+        #     <div class='kpi-card'>
+        #         <h4>Max Payout</h4>
+        #         <p>₹{df_to_display['Previous Months'].max():,.0f}</p>
+        #     </div>
+        #     """, unsafe_allow_html=True)
 
-
-# ---- Calculate Metrics --------
-
-input_data['MPA'] = (input_data['CS'].astype(float)/input_data['MP'].astype(float)) * 100
-input_data['SOB'] = (input_data['AP'].astype(float)/input_data['CS'].astype(float)) * 100
-input_data['MPA'] = input_data['MPA'].clip(upper=100)
-input_data['SOB'] = input_data['SOB'].clip(upper=100)
-input_data['AP_normalized'] =  (input_data['AP'] - input_data['AP'].min()) / (input_data['AP'].max() - input_data['AP'].min())
-input_data['AP_normalized'] = input_data['AP_normalized'] * 100
-
-# ------- Calculate dealer score ----------
-
-input_data['Score'] = input_data.apply(lambda row: calculate_score(row, weights), axis=1)
-
-# Calculate tier
-
-input_data['Tier'] = pd.qcut(
-    input_data['Score'],
-    q=6,
-    labels=[f'Tier {i}' for i in range(6, 0, -1)]  # ['Tier 6', ..., 'Tier 1']
-)
-
-# Calculate incentive tier - linear
-tier_incentives = get_tier_incentives('linear', min_incentive, max_incentive)
-input_data['Incentive_per_Ton_linear'] = input_data['Tier'].map(tier_incentives)
-
-# Calculate incentive tier - exponential
-tier_incentives = get_tier_incentives('exponential', min_incentive, max_incentive)
-input_data['Incentive_per_Ton_exponential'] = input_data['Tier'].map(tier_incentives)
-
-
-# display_data.to_csv("Data/output.csv")
-
-# -------- 
-
-# ---- Normalize Weightages (Convert to 0-1 scale) ----
-#MarketSizePer1000_N_weightage /= 100
-#NORM_sales_by_counter_3M_weightage /= 100
-#NORM_counter_market_ratio_weightage /= 100
-#AVG_SALES_N_weightage /= 100
-
-# ---- Calculate Dealer Score ----
-#df_tar["Dealer_score"] = (
- #   (MarketSizePer1000_N_weightage * np.exp(np.log(df_tar["MarketSizePer1000_N"]))).fillna(0.5) +
-  #  (NORM_sales_by_counter_3M_weightage * np.exp(np.log(df_tar["NORM_sales_by_counter_3M"]))) +
-   # (NORM_counter_market_ratio_weightage * np.exp(np.log(df_tar["NORM_counter_market_ratio"]))) +
-   # (AVG_SALES_N_weightage * np.exp(np.log(df_tar["AVG_SALES-N"])))
-#)
-
-
-
-
-# Define additional percentage based on Category_Overall
-category_bonus = {
-    "Consistently Strong Performer": Consistently_Strong_Performer/100 ,  # 10%
-    "Emerging Performer": Emerging_Performer/100,  # 3%
-    "Target-Oriented Performer": Target_oriented_performer/100,  # 3%
-    "Momentum Gainer": Momentum_gainer/100,
-    "Consistently Weak Performer": Consistently_Weak_Performer/100,
-    "Fluctuating Performer": Fluctuating_Performer/100,
-    "Declining_Performer" : Declining_Performer/100
-}
-
-# Apply additional incentive based on category
-input_data["Final_Incentive"] = round(input_data["Incentive_per_Ton_exponential"] * (1 + input_data["Category_Overall"].map(category_bonus).fillna(0)))
-input_data["Perfomance_Bonus"] =  input_data["Final_Incentive"] - input_data["Incentive_per_Ton_exponential"] 
-input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target_R"]).round(-1)
-#input_data["dealer_type"] =  input_data["dealer_type"].fillna("Non-Exclusive")
-#input_data["AVG_SALES-N"] = input_data["AVG_SALES-N"].round(0)
-df = input_data
-
-# Get the columns in `input_data` that are not in `display_data`
-missing_columns = [col for col in input_data.columns if col not in df_dis.columns]
-
-# Step 2: Merge only the missing columns from `input_data` into `display_data`
-# We merge on 'Dealer_Code', assuming it exists in both dataframes
-display_data = pd.merge(
-    df_dis,
-    input_data[['Dealer_Code'] + missing_columns],  # Include 'Dealer_Code' + the missing columns
-    on='Dealer_Code',
-    how='left'  # Use left join to keep all rows in display_data intact
-)
-
-
-display_data.to_csv('Data/output.csv')
-
-column_labels = {
-    "Dealer_Code": "Dealer Code",
-    "Dealer_Name": "Dealer Name",
-    "dealer_district": "District",
-    "dealer_taluka" : "Taluka",
-    "dealer_type": "Dealer Type",
-     "Achieved_Type":"Target Achievement",
-    "Category_Overall" : "Sales Performance",
-     "Jan_2425_Target" : "Previous Month's Target",
-    "Tier": "Incentive Tier",
-    "Incentive_per_Ton_exponential": "Base Incentive",
-    "Perfomance_Bonus": "Perfomance Bonus",
-    "Final_Incentive" : "Final Incentive",
-    "Predicted_Target_R" : "Predicted Target",
-    "Predicted_Incentive": "Predicted Incentive"
-}
-
-# ---- Default (core) columns using internal names ----
-default_columns = [
-    "Dealer_Code",
-    "Dealer_Name",
-    "dealer_district",
-    "dealer_taluka",
-    "dealer_type",
-    "Achieved_Type",
-    "Category_Overall",
-    "Tier",
-    "Jan_2425_Target",
-    "Predicted_Target_R",
-    "Incentive_per_Ton_exponential",
-    "Perfomance_Bonus",
-    "Final_Incentive",
-    "Predicted_Incentive",
-    
-]
-
-incentive_columns = [
-    "Dealer_Code",
-    "Dealer_Name",
-    # "dealer_district",
-    # "dealer_taluka",
-    # "dealer_type",
-    # "Achieved_Type",
-    # "Category_Overall",
-    "Tier",
-    # "Jan_2425_Target",
-    # "Predicted_Target_R",
-    "Incentive_per_Ton_exponential",
-    "Perfomance_Bonus",
-    "Final_Incentive",
-    "Predicted_Incentive",
-    
-]
-
-# dealer_columns = [
-#     "Dealer_Code",
-#     "Dealer_Name",
-#     "dealer_district",
-#     "dealer_taluka",
-#     "dealer_type",
-#     "Achieved_Type",
-#     "Category_Overall",
-#     "Tier",
-#     "Jan_2425_Target",
-#     "Predicted_Target_R",
-#     "Incentive_per_Ton_exponential",
-#     "Perfomance_Bonus",
-#     "Final_Incentive",
-#     "Predicted_Incentive",
-    
-# ]
-
-# ---- Identify additional columns ----
-all_columns = df.columns.tolist()
-extra_columns = list(set(all_columns) - set(default_columns))
-
-
-
-# ---- User selects additional columns ----
-#with st.expander("➕ Select Additional Columns"):
- #   selected_extra_columns = st.multiselect(
-  #      "Choose additional columns:",
-   #     options=extra_columns,
-    #    default=[]
-  #  )
-  
-
-# ---- Final display columns ----
-display_columns = default_columns
-#+ selected_extra_columns
-df_to_display = df[display_columns].rename(columns=column_labels)
-df_incentive = df[incentive_columns].rename(columns=column_labels)
-
-
-
-kpi_style = """
-<style>
-.kpi-card {
-    background-color: #e0f7fa;  /* Light soft blue/white background */
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    font-family: 'Segoe UI', sans-serif;
-    color: #2a2a2a;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
-}
-
-.kpi-card p {
-    font-size: 1.5rem;  /* Value size */
-    font-weight: bold;
-    color: #1f4e79;  /* Strong blue for the numbers */
-    margin: 0;
-}
-
-.kpi-card h4 {
-    font-size: 0.85rem; /* Label size */
-    font-weight: 500;
-    color: #6c757d;  /* Soft grey for label */
-    margin: 5px 0 0;
-}
-</style>
-"""
+        st.data_editor(df_to_display, key="dealer_table", height=1200)
 
 # Target Distribution Analysis
 summary_table = (
@@ -455,7 +454,7 @@ summary_table = pd.concat([summary_table, grand_total], ignore_index=True)
 # Optional: highlight Grand Total row
 def highlight_total_row(row):
     if row["Target Achievement"] == "Grand Total":
-        return ['background-color: #e0f7fa; color: black; font-weight: bold;' for _ in row]
+        return ['background-color: #e0f7fa; color: #1f4e79; font-weight: bold;' for _ in row]
     return ['' for _ in row]
 
 
@@ -519,70 +518,6 @@ growth_df = input_data[[
     "Previous_Achievement_%", "Recent_Achievement_%",
     "Category_Overall", "Achieved_Type"
 ]]
-# "Growth_Indicator"
-
-# #Plotting time plot
-
-# import pandas as pd
-# from datetime import datetime
-
-# def convert_fy_to_price(col_name):
-#     try:
-#         if col_name == "Dealer_Code":
-#             return col_name
-#         parts = col_name.split("_")
-#         month = parts[0]
-#         fy_start = int("20" + parts[1][:2])
-#         actual_year = fy_start if month in ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] else fy_start + 1
-#         return f"{month}-{str(actual_year)[-2:]}"
-#     except:
-#         return col_name
-
-# def prepare_sales_and_target_melted(input_data):
-#     # Separate sales and target columns
-#     sales_cols = [col for col in input_data.columns if "_sales" in col or col == "Dealer_Code"]
-#     target_cols = [col for col in input_data.columns if "_Target" in col or col == "Dealer_Code"]
-
-#     # Copy relevant data
-#     sales_df = input_data[sales_cols].copy()
-#     sales_df = sales_df.drop("NORM_sales_by_counter_3M", axis =1)
-#     target_df = input_data[target_cols].copy()
-#     target_df = target_df.drop("Predicted_Target_R", axis = 1)
-
-
-#     # Rename for fiscal month-year
-#     sales_df.rename(columns={col: convert_fy_to_price(col) for col in sales_df.columns}, inplace=True)
-#     target_df.rename(columns={col: convert_fy_to_price(col) for col in target_df.columns}, inplace=True)
-
-#     # st.markdown(f"{sales_df.columns}{target_df.columns}")
-
-#     # Melt into long format
-#     sales_df_melted = sales_df.melt(id_vars='Dealer_Code', var_name='Month-Year', value_name='Sales')
-#     target_df_melted = target_df.melt(id_vars='Dealer_Code', var_name='Month-Year', value_name='Target')
-
-#     # Convert 'Month-Year' to a datetime object for sorting
-#     def convert_to_date(month_year_str):
-#         try:
-#             return datetime.strptime(month_year_str, "%b-%y").replace(day=1)
-#         except ValueError:
-#             return pd.NaT
-    
-#     sales_df_melted['Month'] = sales_df_melted['Month-Year'].apply(convert_to_date)
-#     target_df_melted['Month'] = target_df_melted['Month-Year'].apply(convert_to_date)
-
-#     # Group by month and aggregate sales and targets (summed totals)
-#     sales_aggregated = sales_df_melted.groupby('Month').agg({'Sales': 'sum'}).reset_index()
-#     target_aggregated = target_df_melted.groupby('Month').agg({'Target': 'sum'}).reset_index()
-
-#     # Merge the aggregated sales and targets data
-#     merged_data = pd.merge(sales_aggregated, target_aggregated, on='Month', how='inner')
-
-#     return merged_data
-
-# # Prepare the aggregated sales and targets data
-# aggregated_data = prepare_sales_and_target_melted(input_data)
-
-
 
 
 # Achievements Tab
@@ -592,63 +527,6 @@ target_sales_cross = target_sales_cross.reindex(columns=ordered_achievements, fi
 
 target_sales_cross.index.name = None
 
-#Bar chart data
-oct_pred = prev_data[['Dealer_Code', 'Predicted_Target', 'dealer_district']]
-oct_pred['Predicted_Target_R'] = (oct_pred['Predicted_Target'] / 5).apply(np.ceil).fillna(0).astype(int) * 5
-oct_actual = input_data[['Dealer_Code', 'Oct_2425_Target', 'dealer_district']]
-october = pd.merge(oct_pred, oct_actual, on=['Dealer_Code', 'dealer_district'], how='inner')
-
-with st.expander("🔍 Tab Descriptions & Purpose"):
-    st.markdown("""
-    • **Master View**: Review the complete dataset and final predicted incentive outputs per dealer.  
-    • **Dealer Performance Analysis**: Filter dealers by performance and target achievement, with a view of their sales/target growth over recent quarters.  
-    • **Target Distribution**: Analyze how predicted targets and actuals are distributed across achievement categories, with a summary table.
-    """)
-
-
-tab1, tab3, tab2= st.tabs(["Master View", "Target Distribution", "Dealer Performance Analysis"])  #visuals are removed 
-
-# ---- Display Data Table ----
-with tab1:
-    # Inject the style into Streamlit
-    st.markdown(kpi_style, unsafe_allow_html=True)
-
-# KPI display columns
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown(f"""
-        <div class='kpi-card'>
-            <p>{df_to_display['Dealer Name'].nunique()}</p>
-            <h4>Number of Dealers</h4>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown(f"""
-        <div class='kpi-card'>
-            <p>₹{df_to_display['Predicted Incentive'].sum()/10000000:,.2f} Cr</p>
-            <h4>Total Predicted Incentive</h4>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col3:
-        st.markdown(f"""
-        <div class='kpi-card'>            
-            <p>{df_to_display['Predicted Target'].sum():,}</p>
-            <h4>Total Predicted Target (MT)</h4>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # with col4:
-    #     st.markdown(f"""
-    #     <div class='kpi-card'>
-    #         <h4>Max Payout</h4>
-    #         <p>₹{df_to_display['Previous Months'].max():,.0f}</p>
-    #     </div>
-    #     """, unsafe_allow_html=True)
-
-    st.data_editor(df_to_display, key="dealer_table")
 
 
 
@@ -734,23 +612,19 @@ with tab2:
         </style>
     """, unsafe_allow_html=True)
 
+    st.dataframe(display_df, use_container_width=True)
+
     st.markdown(
     """
-    <div style='font-size: 15px; padding: 5px 10px; background-color: #e0f7fa; border-left : 5px solid #1f4e79; border-radius: 5px;  margin-bottom: 10px;'>
-        <prev><b>Quarter-on-quarter growth is calculated as the comparison between:</b></prev><br>
-        <prev> - <b>Recent Quarter:</b> November, December, January</prev><br>
-        <prev> - <b>Previous Quarter:</b> August, September, October</prev>
+    <div style='font-size: 12px; font-color: #1f4e79; padding: 5px 10px; background-color: #e0f7fa; border-left : 5px solid #1f4e79; border-radius: 5px;  margin-bottom: 10px;'>
+        <strong><span style='color: #1f4e79;'>Note:</span></strong><br>
+        <prev><span style='color: #1f4e79;'>    Quarter-on-quarter growth is calculated as the comparison between:</span></prev><br>
+        <prev> <span style='color: #1f4e79;'>   - <b>Recent Quarter:</b> November, December, January</span></prev><br>
+        <prev> <span style='color: #1f4e79;'>   - <b>Previous Quarter:</b> August, September, October</span></prev>
     </div>
     """,
     unsafe_allow_html=True
     )
-    # st.info(
-    #     "Quarter-on-quarter growth is calculated as the comparison between:\n"
-    #     "- **Recent Quarter:** November, December, January\n"
-    #     "- **Previous Quarter:** August, September, October"
-    # )
-
-    st.dataframe(display_df, use_container_width=True)
 
 
 
