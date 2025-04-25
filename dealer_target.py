@@ -531,8 +531,7 @@ target_sales_cross.index.name = None
 
 
 with tab3:
-    with st.sidebar:
-        st.empty()
+
     # st.data_editor(target_sales_cross,key="cross_table")
     st.subheader("January 2025 Summary by Achievement Type")
     st.dataframe(summary_table.style.apply(highlight_total_row, axis=1), use_container_width=True)
@@ -540,8 +539,6 @@ with tab3:
 
 with tab2:
 
-    with st.sidebar:
-        st.empty()
 
     st.subheader("Dealer Count by Performance, Achievement & Growth")
 
