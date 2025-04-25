@@ -179,6 +179,25 @@ with tab1:
         # ---- Incentive Configuration ----
         st.markdown("#### **Incentive Configuration**")
 
+        st.markdown("**Target Type**")
+
+        target_type = st.radio("Select Target Type:", options=["Fixed", "Not Fixed"], index=1, horizontal=True)
+
+        # Apply predicted target logic only if Not Fixed
+        if target_type == "Fixed":
+        # Ask user to input a fixed total target value (default = 12,000)
+            fixed_total_target = st.number_input("Enter Total Fixed Target (MT)", min_value=1000, max_value=100000, value=12000, step=100)
+
+            # Calculate fixed targets using the entered total and round to nearest 5
+            input_data['Predicted_Target_Fixed'] = input_data['Percentage_PT_Dist'] * fixed_total_target
+            input_data['Predicted_Target_Fixed_R'] = (input_data['Predicted_Target_Fixed'] / 5).apply(np.ceil).astype(int) * 5
+
+            input_data['Predicted_Target'] = input_data['Predicted_Target_Fixed_R']
+        
+        else:
+            input_data['Predicted_Target'] = input_data['Predicted_Target_R']
+
+
         # ---- Input Fields for Incentive Range ----
         st.markdown("**Set Incentive Range**")
         min_incentive = st.number_input("Minimum Incentive", min_value=100, max_value=5000, value=500, step=100)
