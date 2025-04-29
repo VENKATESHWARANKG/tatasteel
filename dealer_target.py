@@ -8,6 +8,7 @@ import seaborn as sns
 import matplotlib.ticker as ticker
 from datetime import datetime
 import altair as alt
+import re
 
 
 # --------- Supporting functions
@@ -168,7 +169,7 @@ with st.expander("🔍 Tab Descriptions & Purpose"):
     """, unsafe_allow_html=True)
 
 #tabs
-tab1, tab3, tab2= st.tabs(["Master View", "Target Distribution", "Dealer Performance Analysis"])
+tab1, tab3, tab2, tab4= st.tabs(["Master View", "Target Distribution", "Dealer Performance Analysis", "Dashboard"])
 
 # ---- Display Data Table ----
 with tab1:
@@ -628,4 +629,210 @@ with tab2:
     )
 
 #Visualizations
+#All previous sales and targets data
+all_data = target_pre.df_visual
+# all_data.columns
+
+sales_columns = [col for col in all_data.columns if re.search(r'\d+_sales$', col)]
+sales_columns = sales_columns[9:22]
+
+target_columns = [col for col in all_data.columns if re.search(r'\d+_Target$', col)]
+target_columns = target_columns[9: 22]
+# target_columns
+
+#Extracting previous sales
+sales_before_feb2324= all_data[["Dealer_Code"] + sales_columns]
+target_before_feb2324= all_data[["Dealer_Code"] + target_columns]
+
+data = display_data.copy()
+
+#Obtaining the sales and targets columns
+sales_columns = [col for col in data.columns if re.search(r'\d+_sales$', col)]
+target_columns = [col for col in data.columns if re.search(r'\d+_Target$', col)]
+#Other columns
+oth_columns = ['Dealer_Code', 'Dealer_Name', 'dealer_district', 'dealer_type', 'Achieved_Type', 'Predicted_Target_R',
+       'Category_Overall']
+
+
+sales = data[oth_columns + sales_columns]
+targets = data[oth_columns + target_columns]
+
+alltime_sales = pd.merge(sales_before_feb2324,
+                         sales,
+                         on='Dealer_Code',
+                         how= 'right')
+
+alltime_targets = pd.merge(target_before_feb2324,
+                         targets,
+                         on='Dealer_Code',
+                         how= 'right')
+
+
+#Renaming using function defined in target_pr
+alltime_sales.rename(columns={col: target_pre.convert_fy_to_price(col) for col in alltime_sales.columns}, inplace=True)
+alltime_targets.rename(columns={col: target_pre.convert_fy_to_price(col) for col in alltime_targets.columns}, inplace=True)
+
+#Reshaping
+
+#Obtianing the month columns
+month_year_cols = [col for col in alltime_sales.columns if '-' in col] 
+
+sales_reshaped = alltime_sales.melt(id_vars=oth_columns, 
+                    value_vars=month_year_cols, var_name='Month-Year', value_name='Sales')
+
+targets_reshaped = alltime_targets.melt(id_vars=oth_columns,
+                                value_vars=month_year_cols, var_name='Month-Year', value_name='Targets')
+
+sales_reshaped['Date'] = pd.to_datetime(sales_reshaped['Month-Year'], format='%b-%y')
+targets_reshaped['Date'] = pd.to_datetime(targets_reshaped['Month-Year'], format='%b-%y')
+
+sales_reshaped.drop('Month-Year', axis = 1, inplace = True)
+targets_reshaped.drop('Month-Year', axis = 1, inplace = True)
+
+sales_targets = pd.merge(sales_reshaped,
+                         targets_reshaped,
+                         on = oth_columns + ['Date'],
+                         how = 'inner')
+
+with tab4:
+
+    col_linechart, col_barchart = st.columns(2)
+
+    with col_linechart:
+
+        st.markdown("### Sales vs Target Over Time")
+
+        col_time, col_filter, col_subfilter = st.columns(3)
+        
+        with col_time:
+            agg_type = st.radio("Select Aggregation:", ("Month-wise", "Year-wise"))
+
+        with col_filter:
+            filter_type = st.selectbox("Select Filter Type:", ["All", "State", "District", "Dealer"])
+            filtered_data = sales_targets.copy()
+
+        with col_subfilter:
+            if filter_type == "State":
+            
+                state_option = st.selectbox("Select State:", ["All", "Andhra Pradesh", "Telangana"])
+
+                if state_option == "Andhra Pradesh":
+                    filtered_data = filtered_data[filtered_data['Dealer_Code'].str.startswith('SIPA')]
+                elif state_option == "Telangana":
+                    filtered_data = filtered_data[filtered_data['Dealer_Code'].str.startswith('SIPT')]
+
+            elif filter_type == "District":
+                district_list = sorted(filtered_data['dealer_district'].dropna().unique())
+                district_options = ["All"] + district_list
+                selected_district = st.selectbox("Select District:", options=district_options)
+
+                if selected_district != "All":
+                    filtered_data = filtered_data[filtered_data['dealer_district'] == selected_district]
+
+            elif filter_type == "Dealer":
+                dealer_list = sorted(filtered_data['Dealer_Name'].dropna().unique())
+                dealer_options = ["All"] + dealer_list
+                selected_dealer = st.selectbox("Select Dealer:", options=dealer_options)
+
+                if selected_dealer != "All":
+                    filtered_data = filtered_data[filtered_data['Dealer_Name'] == selected_dealer]
+
+
+        # Aggregation
+        if agg_type == "Month-wise":
+            st_line_chart = filtered_data.groupby('Date')[['Sales', 'Targets']].sum().reset_index()
+            x_axis = alt.X('Date:T', title='Month-Year')
+        else:
+            filtered_data['Year'] = filtered_data['Date'].dt.year
+            st_line_chart = filtered_data.groupby('Year')[['Sales', 'Targets']].sum().reset_index()
+            x_axis = alt.X('Year:O', title='Year')
+
+        # Melt the data for Altair (long format)
+        st_line_chart_melted = st_line_chart.melt(id_vars=[st_line_chart.columns[0]], 
+                                                  value_vars=['Sales', 'Targets'],
+                                                  var_name='Metric', value_name='Value')
+
+        # Build the Altair chart
+        chart = alt.Chart(st_line_chart_melted).mark_line(point=True).encode(
+            x=x_axis,
+            y=alt.Y('Value:Q', title='Total Value (MT)'),
+            color='Metric:N',
+            tooltip=[st_line_chart_melted.columns[0], 'Metric', 'Value']
+        ).properties(
+            width=800,
+            height=300
+        ).interactive()
+
+        st.altair_chart(chart, use_container_width=True)
+
+    with col_barchart:
+
+        st.markdown("### District Sales Split and Achievement %")
+
+        col_state, col_year, col_month = st.columns(3)
+
+        with col_state:
+        # -------- Filter Controls ----------
+            state_selected = st.radio("Select State:", ["Andhra Pradesh", "Telangana"], index=0)
+
+            # Filter based on State
+            if state_selected == "Andhra Pradesh":
+                barchart_data = sales_targets[sales_targets['Dealer_Code'].str.startswith('SIPA')].copy()
+            else:
+                barchart_data = sales_targets[sales_targets['Dealer_Code'].str.startswith('SIPT')].copy()
+
+            # Extract Year and Month
+            barchart_data['Year'] = barchart_data['Date'].dt.year
+            barchart_data['Month'] = barchart_data['Date'].dt.month_name()
+
+        with col_year:
+            # Year Filter
+            years_list = sorted(barchart_data['Year'].dropna().unique())
+            year_options = ["All"] + [str(year) for year in years_list]
+            selected_year = st.selectbox("Select Year:", options=year_options, index=0)
+
+        with col_month:
+            # Month Filter
+            months_list = barchart_data['Month'].dropna().unique()
+            months_order = ['January', 'February', 'March', 'April', 'May', 'June',
+                            'July', 'August', 'September', 'October', 'November', 'December']
+            months_list_sorted = [month for month in months_order if month in months_list]
+            month_options = ["All"] + months_list_sorted
+            selected_month = st.selectbox("Select Month:", options=month_options, index=0)
+
+        # --------- Apply Filters ---------
+        if selected_year != "All":
+            barchart_data = barchart_data[barchart_data['Year'] == int(selected_year)]
+
+        if selected_month != "All":
+            barchart_data = barchart_data[barchart_data['Month'] == selected_month]
+
+        # -------- Data Preparation ----------
+        district_summary = barchart_data.groupby(['dealer_district', 'dealer_type']).agg({'Sales':'sum', 'Targets':'sum'}).reset_index()
+
+        achievement_summary = district_summary.groupby('dealer_district').agg({'Sales':'sum', 'Targets':'sum'}).reset_index()
+        achievement_summary['Achievement %'] = (achievement_summary['Sales'] / achievement_summary['Targets']) * 100
+
+        # -------- Altair Chart ----------
+        bar = alt.Chart(district_summary).mark_bar().encode(
+            x=alt.X('dealer_district:N', sort='-y', title='District'),
+            y=alt.Y('Sales:Q', title='Sales (MT)'),
+            color=alt.Color('dealer_type:N', title='Dealer Type'),
+            tooltip=['dealer_district', 'dealer_type', 'Sales']
+        )
+
+        line = alt.Chart(achievement_summary).mark_line(point=True, color='black').encode(
+            x=alt.X('dealer_district:N'),
+            y=alt.Y('Achievement %:Q', title='Achievement (%)', axis=alt.Axis(titleColor='black')),
+            tooltip=['dealer_district', 'Achievement %']
+        ).interactive()
+
+        final_chart = alt.layer(bar, line).resolve_scale(
+            y='independent'
+        ).properties(
+            width=750,
+            height=300
+        )
+
+        st.altair_chart(final_chart, use_container_width=True)
 
