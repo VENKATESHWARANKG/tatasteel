@@ -434,19 +434,28 @@ with tab1:
         st.data_editor(df_to_display, key="dealer_table", height=1200)
 
 # Target Distribution Analysis
+
 summary_table = (
     input_data
-    .groupby("Achieved_Type")[["Jan_2425_sales", "Jan_2425_Target", "Predicted_Target"]]
-    .sum()
+    .groupby("Achieved_Type")
+    .agg({
+        "Dealer_Code": pd.Series.nunique,  # count of unique dealers
+        "Jan_2425_sales": "sum",
+        "Jan_2425_Target": "sum",
+        "Predicted_Target": "sum"
+        
+    })
     .rename(columns={
         "Jan_2425_sales": "January 2025 Sales",
         "Jan_2425_Target": "January 2025 Target",
-        "Predicted_Target": "Predicted Target"
+        "Predicted_Target": "Predicted Target",
+        "Dealer_Code": "No. of Dealers"
     })
     .reset_index()
 )
 
 # Convert amounts to integers (whole numbers)
+summary_table["No. of Dealers"] = summary_table["No. of Dealers"].astype(int)
 summary_table["January 2025 Sales"] = summary_table["January 2025 Sales"].astype(int)
 summary_table["January 2025 Target"] = summary_table["January 2025 Target"].astype(int)
 summary_table["Predicted Target"] = summary_table["Predicted Target"].astype(int)
@@ -456,7 +465,7 @@ summary_table = summary_table.rename(columns={"Achieved_Type": "Target Achieveme
 
 achievement_order = [
     "High Achievement",
-    "Moderate Achievement",   # double check spelling here — should it be 'Achievement'?
+    "Moderate Achievement",  
     "Low Achievement",
     "No Achievement",
     "Target Not Set"
@@ -477,13 +486,15 @@ grand_total = pd.DataFrame({
     "Target Achievement": ["Grand Total"],
     "January 2025 Sales": [summary_table["January 2025 Sales"].sum()],
     "January 2025 Target": [summary_table["January 2025 Target"].sum()],
-    "Predicted Target": [summary_table["Predicted Target"].sum()]
+    "Predicted Target": [summary_table["Predicted Target"].sum()],
+    "No. of Dealers": [summary_table["No. of Dealers"].sum()]
 })
 
 # Final table
 summary_table = pd.concat([summary_table, grand_total], ignore_index=True)
+summary_table_display = summary_table.loc[:,["Target Achievement", "January 2025 Sales", "January 2025 Target", "Predicted Target"]].copy()
 
-# Optional: highlight Grand Total row
+# Highlight Grand Total row
 def highlight_total_row(row):
     if row["Target Achievement"] == "Grand Total":
         return ['background-color: #e0f7fa; color: #1f4e79; font-weight: bold;' for _ in row]
@@ -493,8 +504,44 @@ def highlight_total_row(row):
 with tab3:
 
     # st.data_editor(target_sales_cross,key="cross_table")
-    st.subheader("January 2025 Summary by Achievement Type")
+    st.subheader("January 2025 Summary, Dealer Count & Predicted Target by Achievement Type")
     st.dataframe(summary_table.style.apply(highlight_total_row, axis=1), use_container_width=True)
+
+    # Remove Grand Total row
+    summary_chart_data = summary_table[summary_table["Target Achievement"] != "Grand Total"].copy()
+
+    # Calculate averages
+    summary_chart_data["Avg Jan 2025 Target"] = summary_chart_data["January 2025 Target"] / summary_chart_data["No. of Dealers"]
+    summary_chart_data["Avg Predicted Target"] = summary_chart_data["Predicted Target"] / summary_chart_data["No. of Dealers"]
+
+    # Apply custom order
+    summary_chart_data["Target Achievement"] = pd.Categorical(
+        summary_chart_data["Target Achievement"],
+        categories=achievement_order,
+        ordered=True
+    )
+
+    # st.subheader("Predicted Target Model Distribution")
+    # Set up columns
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("##### Average Jan 2025 Target per Dealer")
+        jan_target_chart = alt.Chart(summary_chart_data).mark_bar().encode(
+            x=alt.X("Target Achievement:N", sort=None, title="Achievement Type"),
+            y=alt.Y("Avg Jan 2025 Target:Q", title="Average Jan Target"),
+            tooltip=["Target Achievement", "Avg Jan 2025 Target"]
+        ).properties(width=350, height=400)
+        st.altair_chart(jan_target_chart, use_container_width=True)
+
+    with col2:
+        st.markdown("##### Average Predicted Target per Dealer")
+        pred_target_chart = alt.Chart(summary_chart_data).mark_bar(color="#83C9FF").encode(
+            x=alt.X("Target Achievement:N", sort=None, title="Achievement Type"),
+            y=alt.Y("Avg Predicted Target:Q", title="Average Predicted Target"),
+            tooltip=["Target Achievement", "Avg Predicted Target"]
+        ).properties(width=350, height=400)
+        st.altair_chart(pred_target_chart, use_container_width=True)
 
 #3 months
 recent_months_sales = ["Nov_2425_sales", "Dec_2425_sales", "Jan_2425_sales"]
