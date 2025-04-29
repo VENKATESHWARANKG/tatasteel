@@ -179,25 +179,45 @@ with tab1:
         # ---- Incentive Configuration ----
         st.markdown("#### **Incentive Configuration**")
 
-        # st.markdown("**Target Type**")
+        st.markdown("**Target Type**")
 
-        # target_type = st.radio("Select Target Type:", options=["Fixed", "Not Fixed"], index=1, horizontal=True)
+        target_type = st.radio("Select Target Type:", options=["Fixed", "Not Fixed"], index=1, horizontal=True)
 
-        # # Apply predicted target logic only if Not Fixed
-        # if target_type == "Fixed":
-        # # Ask user to input a fixed total target value (default = 12,000)
-        #     fixed_total_target = st.number_input("Enter Total Fixed Target (MT)", min_value=1000, max_value=100000, value=12000, step=100)
+        # Apply predicted target logic only if Not Fixed
 
-        #     # Calculate fixed targets using the entered total and round to nearest 5
-        #     input_data['Predicted_Target_Fixed'] = input_data['Percentage_PT_Dist'] * fixed_total_target
-        #     input_data['Predicted_Target_Fixed_R'] = (input_data['Predicted_Target_Fixed'] / 5).apply(np.ceil).astype(int) * 5
+        #  Fixed and Not Fixed target type selection
+        if target_type == "Fixed":
+            fixed_total_target = st.number_input("Enter Total Fixed Target (MT)", min_value=1000, max_value=100000, value=11700, step=100)
 
-        #     input_data['Predicted_Target'] = input_data['Predicted_Target_Fixed_R']
-        
-        # else:
-        #     input_data['Predicted_Target'] = input_data['Predicted_Target_R']
+            # Final assignment
+            # Compute predicted targets based on percentage distribution
+            input_data['Predicted_Target_Fixed'] = input_data['Percentage_PT_Dist'] * fixed_total_target
 
-        input_data['Predicted_Target'] = input_data['Predicted_Target_R']
+            # Round to nearest integer
+            input_data['Predicted_Target_Rounded'] = input_data['Predicted_Target_Fixed'].round().astype(int)
+
+            # Adjust rounding difference to match fixed target exactly
+            diff = fixed_total_target - input_data['Predicted_Target_Rounded'].sum()
+            unit = 1
+
+            if diff != 0:
+                n_adjustments = abs(diff)
+                adjustment_col = input_data['Predicted_Target_Fixed'] - input_data['Predicted_Target_Rounded']
+                if diff > 0:
+                    top_indices = adjustment_col.nlargest(n_adjustments).index
+                    input_data.loc[top_indices, 'Predicted_Target_Rounded'] += unit
+                else:
+                    top_indices = adjustment_col.nsmallest(n_adjustments).index
+                    input_data.loc[top_indices, 'Predicted_Target_Rounded'] -= unit
+
+
+            # Final assignment
+            input_data['Predicted_Target'] = input_data['Predicted_Target_Rounded']
+
+        else:
+            input_data['Predicted_Target'] = input_data['Predicted_Target_R']
+
+
         
         # ---- Input Fields for Incentive Range ----
         st.markdown("**Set Incentive Range**")

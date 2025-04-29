@@ -518,60 +518,6 @@ df_cmgr['Last_3_Month_Avg'] = df_cmgr[last_6_months].apply(lambda x: x[x >= 10].
 # %%
 #df_cmgr[['Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales', 'Last_3_Month_Avg']]
 
-# %%
-# # Define percentage increase based on flag and value ranges
-# def apply_percentage_increase(current_target, avg, flag):
-#     inc = 0
-#     if flag == '5_6':
-#         if avg < 20:
-#             inc = avg * 1.3  # 30% increase
-#         elif 20 <= avg <= 30:
-#             inc =  avg * 1.3  # 30% increase
-#         elif 30 < avg <= 50:
-#             inc =  avg * 1.2  # 20% increase
-#         elif 50 < avg <= 100:
-#             inc =  avg * 1.15  # 15% increase
-#         elif 100 < avg <= 200:
-#             inc =  avg * 1.10  # 10% increase
-#         elif 200 < avg <= 400:
-#             inc =  avg * 1.05  # 5% increase
-#         elif avg > 400:
-#             inc =  avg * 1.05  # 5% increase
-#     elif flag == '3_4':
-#         if 0 <= avg <= 30:
-#             inc =  avg * 1.2  # 20% increase
-#         elif 30 < avg <= 50:
-#             inc =  avg * 1.15  # 15% increase
-#         elif 50 < avg <= 100:
-#             inc =  avg * 1.10  # 10% increase
-#         elif 100 < avg <= 200:
-#             inc =  avg * 1.05  # 5% increase
-#         elif avg > 200:
-#             inc =  avg * 1.03  # 3% increase
-#     elif flag == '1_2':
-#         if avg < 20:
-#             inc =  avg * 1.2  # 20% increase
-#         elif 20 <= avg <= 30:
-#             inc =  avg * 1.15  # 15% increase
-#         elif 30 < avg <= 50:
-#             inc = avg * 1.10  # 10% increase
-#         elif 50 < avg <= 100:
-#             inc =  avg * 1.05  # 5% increase
-#         elif 100 < avg <= 200:
-#             inc =  avg * 1.03  # 3% increase
-#         elif avg > 200:
-#             inc =  avg * 1.03  # 3% increase
-#         inc = max(inc, current_target)
-#     elif flag == '0':
-#         inc =  avg * 1.0  # No change for flag 0
-#     return avg
-
-#  # Apply predicted target logic
-# df_cmgr['Predicted_Target'] = df_cmgr.apply(lambda row:
-#     apply_percentage_increase(row['Current_Month_Target'],row['Last_3_Month_Avg'], row['Achieved_Category']), axis=1)
-
-# %%
-
 
 # %%
 # Define percentage increase based on flag and value ranges
@@ -655,6 +601,94 @@ df_cmgr["Predicted_Target_R"] = np.where(
     0, 
    df_cmgr["Predicted_Target_R"]
 )
+
+
+
+# # Define percentage increase based on flag and value ranges
+# def apply_percentage_increase(current_target, avg, flag):
+#     if flag == '5_6':
+#         if avg < 20:
+#             return avg * 1.3  # 30% increase
+#         elif 20 <= avg <= 30:
+#             return avg * 1.3  # 30% increase
+#         elif 30 < avg <= 50:
+#             return avg * 1.2  # 20% increase
+#         elif 50 < avg <= 100:
+#             return avg * 1.15  # 15% increase
+#         elif 100 < avg <= 200:
+#             return avg * 1.10  # 10% increase
+#         elif 200 < avg <= 400:
+#             return avg * 1.05  # 5% increase
+#         elif avg > 400:
+#             return avg * 1.05  # 5% increase
+#     elif flag == '3_4':
+#         if 0 <= avg <= 30:
+#             return avg * 1.2  # 20% increase
+#         elif 30 < avg <= 50:
+#             return avg * 1.15  # 15% increase
+#         elif 50 < avg <= 100:
+#             return avg * 1.10  # 10% increase
+#         elif 100 < avg <= 200:
+#             return avg * 1.05  # 5% increase
+#         elif avg > 200:
+#             return avg * 1.03  # 3% increase
+#     elif flag == '1_2':
+#         if avg < 20:
+#             return avg * 1.2  # 20% increase
+#         elif 20 <= avg <= 30:
+#             return avg * 1.15  # 15% increase
+#         elif 30 < avg <= 50:
+#             return avg * 1.10  # 10% increase
+#         elif 50 < avg <= 100:
+#             return avg * 1.05  # 5% increase
+#         elif 100 < avg <= 200:
+#             return avg * 1.03  # 3% increase
+#         elif avg > 200:
+#             return avg * 1.03  # 3% increase
+#     elif flag == '0':
+#         return avg * 1.0  # No change for flag 0
+#     return avg
+
+#  # Apply predicted target logic
+# df_cmgr['Predicted_Target'] = df_cmgr.apply(lambda row:
+#     apply_percentage_increase(row['Jan_2425_Target'], row['Last_3_Month_Avg'], row['Achieved_Category']), axis=1).fillna(0).astype(int) 
+
+# df_cmgr['Predicted_Target_R'] = (df_cmgr['Predicted_Target'] / 5).apply(np.ceil).fillna(0).astype(int) * 5
+
+# # Calculate the total of the predicted target rounded values
+# total_predicted_target = df_cmgr['Predicted_Target_R'].sum()
+
+# # Calculate percentage distribution of the predicted target
+# df_cmgr['Percentage_PT_Dist'] = df_cmgr['Predicted_Target_R'] / total_predicted_target
+
+
+# last_6_months = ['Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
+# df_cmgr['Last_3_Month_Sal'] = df_cmgr[last_6_months].sum(axis=1)
+
+
+# mapping = {
+#     "5_6": "High Achievement",
+#     "1_2": "Low Achievement",
+#     "3_4": "Moderate Achievement",
+#     "0": "No Achievement"
+# }
+
+# df_cmgr["Achieved_Type"] = np.where(
+#     df_cmgr["Last_3_Month_Sal"] == 0, 
+#     "Target Not Set",  # If Last_3_Month_Sal is 0
+#     df_cmgr["Achieved_Category"].map(mapping)  # Otherwise, use mapping
+# )
+
+
+# df_cmgr["Predicted_Target_R"] = np.where(
+#     df_cmgr["Achieved_Type"] == "Target Not Set", 
+#     0, 
+#    df_cmgr["Predicted_Target_R"]
+# )
+
+
+
+
 # def calculate_predicted_target(row):
 #     # If all last 6 months sales are 0, set Predicted_Target to 0 and Achieved_Category to 'N/A'
 #     if all(row[col] == 0 for col in last_6_months):
