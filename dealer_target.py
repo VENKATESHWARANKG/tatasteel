@@ -162,8 +162,8 @@ input_data = pd.merge(
 with st.expander("🔍 Tab Descriptions & Purpose"):
     st.markdown("""
     <div style="font-size: 12px;">
-        • <strong>Master View</strong>: Review the complete dataset and final predicted incentive outputs per dealer.  
-        • <strong>Dealer Performance Analysis</strong>: Filter dealers by performance and target achievement, with a view of their sales/target growth over recent quarters.  
+        • <strong>Master View</strong>: Review the complete dataset and final predicted incentive outputs per dealer. <br>
+        • <strong>Dealer Performance Analysis</strong>: Filter dealers by performance and target achievement, with a view of their sales/target growth over recent quarters. <br>
         • <strong>Target Distribution</strong>: Analyze how predicted targets and actuals are distributed across achievement categories, with a summary table.
     </div>
     """, unsafe_allow_html=True)
