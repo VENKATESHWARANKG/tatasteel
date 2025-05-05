@@ -134,7 +134,7 @@ st.title("Dealer Incentive Allocation")
 
 # ---- Load CSV File ----
 # load input file for incentive calculation
-input_data = pd.read_csv('Data/dealer_incentive_model_v2.csv')
+input_data = pd.read_csv('/root/tata/tatasteel/Data/dealer_incentive_model_v2.csv')
 # prev_data = pd.read_csv('Data/prev_oct_predicted_target.csv')
 
 
