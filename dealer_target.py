@@ -321,7 +321,8 @@ with tab1:
         )
 
 
-        display_data.to_csv('Data/output.csv')
+        display_data.to_csv('/root/tata/tatasteel/Data/output.csv')
+
 
         column_labels = {
             "Dealer_Code": "Dealer Code",
