@@ -8,7 +8,7 @@ from datetime import datetime
 
 # %%
 # Read file 
-df = pd.read_excel('Data/raw_data_1903_fy25_merged.xlsx')
+df = pd.read_excel('/root/tata/tatasteel/Data/raw_data_1903_fy25_merged.xlsx')
 df_visual = df.copy()
 df['new_market_potential'] = df['new_market_potential'].fillna(df['market_potential'])
 
