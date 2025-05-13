@@ -10,39 +10,6 @@ from datetime import datetime
 import altair as alt
 import re
 
-
-# --------- Supporting functions
-
-# Function to calculate composite score
-def calculate_score(row, weights):
-    return (
-        row['MPA'] * (weights['mpa']/100) +
-        row['SOB'] * (weights['sob']/100) +
-        row['AP_normalized'] * (weights['asp']/100)
-    )
-
-
-
-def get_tier_incentives(method, min_inc_per_ton, max_inc_per_ton):
-    tiers = [f'Tier {i}' for i in range(1, 6)]
-    
-    if method == "exponential":
-        return {
-            tier: round(min_inc_per_ton + (max_inc_per_ton - min_inc_per_ton) * np.exp(-0.3*(i-1)))
-            for i, tier in enumerate(tiers, 1)
-        }
-    
-    elif method == "steps":
-        steps = [3000, 2500, 2200, 1800, 1500, 1200, 900, 700, 600, 500]
-        return {tier: round(steps[i]) for i, tier in enumerate(tiers)}
-    
-    else:  # linear
-        return {
-            tier: round(min_inc_per_ton + (max_inc_per_ton - min_inc_per_ton) * (10 - i)/9)
-            for i, tier in enumerate(tiers, 1)
-        }
-
-
 #Page configuration
 
 st.set_page_config(
@@ -134,7 +101,7 @@ st.title("Dealer Incentive Allocation")
 
 # ---- Load CSV File ----
 # load input file for incentive calculation
-input_data = pd.read_csv('/root/tata/tatasteel/Data/dealer_incentive_model_v2.csv')
+# input_data = pd.read_csv('Data/dealer_incentive_model_v2.csv')
 # prev_data = pd.read_csv('Data/prev_oct_predicted_target.csv')
 
 
@@ -151,13 +118,7 @@ except FileNotFoundError:
 
 # merge data
 
-input_data = pd.merge(
-        df_tar,
-        input_data,
-        left_on='Dealer_Code',
-        right_on='Code',
-        how='inner'  # or 'left' depending on your needs
-    )
+input_data = df_tar.copy()
 
 with st.expander("🔍 Tab Descriptions & Purpose"):
     st.markdown("""
@@ -183,8 +144,6 @@ with tab1:
         st.markdown("**Target Type**")
 
         target_type = st.radio("Select Target Type:", options=["Fixed", "Not Fixed"], index=1, horizontal=True)
-
-        # Apply predicted target logic only if Not Fixed
 
         #  Fixed and Not Fixed target type selection
         if target_type == "Fixed":
@@ -218,16 +177,19 @@ with tab1:
         else:
             input_data['Predicted_Target'] = input_data['Predicted_Target_R']
 
-
         
         # ---- Input Fields for Incentive Range ----
-        st.markdown("**Set Incentive Range**")
-        min_incentive = st.number_input("Minimum Incentive", min_value=100, max_value=5000, value=500, step=100)
-        max_incentive = st.number_input("Maximum Incentive", min_value=100, max_value=10000, value=2000, step=100)
+        st.markdown("**Set Incentive Range or Average**")
+
+        incentive_type = st.radio("Select Incentive Input Type:", options=["Average", "Range"], index=1, horizontal=True)
         
-        # if min_incentive > max_incentive:
-        #     st.warning("⚠️ Please make sure your minimum incentive value is greater than your maximum incentive value.")
-        #     st.stop()
+        if incentive_type == 'Range':
+            min_incentive = st.number_input("Minimum Incentive", min_value=100, max_value=5000, value=500, step=100)
+            max_incentive = st.number_input("Maximum Incentive", min_value=100, max_value=10000, value=2000, step=100)
+        
+        elif incentive_type == 'Average':
+            avg_inc_pt = st.number_input("Enter Average Incentive per Ton", min_value=100, max_value=10000, value=750, step=50)
+            total_incentive = avg_inc_pt * input_data['Predicted_Target'].sum()
 
         # ---- Weightage Inputs ----
         weights = {}
@@ -236,15 +198,15 @@ with tab1:
         st.markdown(
             """
             <div style='font-size: 12px; font-color: #1f4e79; padding: 5px 10px; background-color: #e0f7fa; border-left : 5px solid #1f4e79; border-radius: 5px;  margin-bottom: 10px;'>
-                <strong><span style='color: #1f4e79;'>Sum of weigths should be 100%</span></strong>
+                <strong><span style='color: #1f4e79;'>Sum of weights should be 100%</span></strong>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        weights['mpa'] = st.number_input("Market potential Achieved", min_value=0, max_value=100, value=20)
-        weights['sob'] = st.number_input("Share of Business", min_value=0, max_value=100, value=20)
-        weights['asp'] = st.number_input("Average Sales", min_value=0, max_value=100, value=60)
+        weights['mpa'] = st.number_input("Market potential Achieved", min_value=0, max_value=100, value=0)
+        weights['sob'] = st.number_input("Share of Business", min_value=0, max_value=100, value=0)
+        weights['asp'] = st.number_input("Average Sales", min_value=0, max_value=100, value=100)
 
         # ---- Validate Weightage Sum ----
         total_weight = weights['mpa'] + weights['sob'] + weights['asp']
@@ -255,57 +217,139 @@ with tab1:
 
         # ---- Performance Weightages ----
         st.markdown("**Performance Weightages**")
-        Consistently_Strong_Performer = st.number_input("Consistently Strong Performer", min_value=0, max_value=100, value=0)
-        Emerging_Performer = st.number_input("Emerging Performer", min_value=0, max_value=100, value=0)
-        Target_oriented_performer = st.number_input("Target-Oriented Performer", min_value=0, max_value=100, value=0)
-        Momentum_gainer = st.number_input("Momentum Gainer", min_value=0, max_value=100, value=0)
+        Consistently_Strong_Performer = st.number_input("Consistently Strong Performer", min_value=0, max_value=100, value= 20)
+        Emerging_Performer = st.number_input("Emerging Performer", min_value=0, max_value=100, value= 10)
+        Target_oriented_performer = st.number_input("Target-Oriented Performer", min_value=0, max_value=100, value= 5)
+        Momentum_gainer = st.number_input("Momentum Gainer", min_value=0, max_value=100, value= 5)
         Consistently_Weak_Performer = st.number_input("Consistently Weak Performer", min_value=0, max_value=100, value=0)
         Fluctuating_Performer = st.number_input("Fluctuating Performer", min_value=0, max_value=100, value=0)
         Declining_Performer = st.number_input("Declining Performer", min_value=0, max_value=100, value=0)
 
-        # ---- Calculate Metrics --------
-        input_data['MPA'] = (input_data['CS'].astype(float) / input_data['new_market_potential'].astype(float)) * 100
-        input_data['SOB'] = (input_data['AP_12'].astype(float) / input_data['CS'].astype(float)) * 100
-        input_data['MPA'] = input_data['MPA'].clip(upper=100)
-        input_data['SOB'] = input_data['SOB'].clip(upper=100)
-        input_data['AP_normalized'] = (input_data['AP_12'] - input_data['AP_12'].min()) / (input_data['AP_12'].max() - input_data['AP_12'].min())
-        input_data['AP_normalized'] = input_data['AP_normalized'] * 100
-
-        # ------- Calculate dealer score ----------
-        input_data['Score'] = input_data.apply(lambda row: calculate_score(row, weights), axis=1)
-
-        # Calculate tier
-        input_data['Tier'] = pd.qcut(
-            input_data['Score'],
-            q=6,
-            labels=[f'Tier {i}' for i in range(6, 0, -1)]  # ['Tier 6', ..., 'Tier 1']
-        )
-
-        # Calculate incentive tier - linear
-        tier_incentives = get_tier_incentives('linear', min_incentive, max_incentive)
-        input_data['Incentive_per_Ton_linear'] = input_data['Tier'].map(tier_incentives)
-
-        # Calculate incentive tier - exponential
-        tier_incentives = get_tier_incentives('exponential', min_incentive, max_incentive)
-        input_data['Incentive_per_Ton_exponential'] = input_data['Tier'].map(tier_incentives)
-
-        # Define additional percentage based on Category_Overall
+        # ---- Performance Bonuses ----
         category_bonus = {
-            "Consistently Strong Performer": Consistently_Strong_Performer / 100,  # 10%
-            "Emerging Performer": Emerging_Performer / 100,  # 3%
-            "Target-Oriented Performer": Target_oriented_performer / 100,  # 3%
+            "Consistently Strong Performer": Consistently_Strong_Performer / 100,
+            "Emerging Performer": Emerging_Performer / 100,
+            "Target-Oriented Performer": Target_oriented_performer / 100,
             "Momentum Gainer": Momentum_gainer / 100,
             "Consistently Weak Performer": Consistently_Weak_Performer / 100,
             "Fluctuating Performer": Fluctuating_Performer / 100,
             "Declining Performer": Declining_Performer / 100
         }
 
-        # Apply additional incentive based on category
-        input_data["Final_Incentive"] = round(input_data["Incentive_per_Ton_exponential"] * (1 + input_data["Category_Overall"].map(category_bonus).fillna(0)))
-        input_data["Perfomance_Bonus"] =  input_data["Final_Incentive"] - input_data["Incentive_per_Ton_exponential"] 
-        input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target"]).round(-1)
-        #input_data["dealer_type"] =  input_data["dealer_type"].fillna("Non-Exclusive")
-        #input_data["AVG_SALES-N"] = input_data["AVG_SALES-N"].round(0)
+        # ---- Calculate Metrics --------
+        input_data['MPA'] = (input_data['CS'].astype(float) / input_data['market_potential'].astype(float)) * 100
+        input_data['SOB'] = (input_data['AP_12'].astype(float) / input_data['CS'].astype(float)) * 100
+        input_data['MPA'] = input_data['MPA'].clip(upper=100)
+        input_data['SOB'] = input_data['SOB'].clip(upper=100)
+        input_data['AP_normalized'] = (input_data['AP_12'] - input_data['AP_12'].min()) / (input_data['AP_12'].max() - input_data['AP_12'].min())
+        input_data['AP_normalized'] = input_data['AP_normalized'] * 100
+
+
+        # --------- Supporting functions
+
+        # Function to calculate composite score
+        def calculate_score(row, weights):
+            return (
+                row['MPA'] * (weights['mpa']/100) +
+                row['SOB'] * (weights['sob']/100) +
+                row['AP_normalized'] * (weights['asp']/100)
+            )
+
+        def get_tier_incentives(method, min_inc_per_ton, max_inc_per_ton):
+            tiers = [f'Tier {i}' for i in range(1, 7)]
+            
+            if method == "exponential":
+                return {
+                    tier: round(min_inc_per_ton + (max_inc_per_ton - min_inc_per_ton) * np.exp(-0.3*(i-1)))
+                    for i, tier in enumerate(tiers, 1)
+                }
+            
+            elif method == "steps":
+                steps = [3000, 2500, 2200, 1800, 1500, 1200, 900, 700, 600, 500]
+                return {tier: round(steps[i]) for i, tier in enumerate(tiers)}
+            
+            else:  # linear
+                return {
+                    tier: round(min_inc_per_ton + (max_inc_per_ton - min_inc_per_ton) * (10 - i)/9)
+                    for i, tier in enumerate(tiers, 1)
+                }
+            
+        # Score and Tier Assignment
+        input_data['Score'] = input_data.apply(lambda row: calculate_score(row, weights), axis=1)
+        input_data['Tier'] = pd.qcut(input_data['Score'], q=6, labels=[f'Tier {i}' for i in range(6, 0, -1)])
+        # input_data.dropna(subset=['Tier'], inplace=True)
+
+
+
+        def round_nearest(series, base=5):
+            return base * (series / base).round()
+        
+        # ---- Apply Incentives Based on Selection ----
+        if incentive_type == "Range":
+            tier_incentives = get_tier_incentives('exponenetial', min_incentive, max_incentive)
+            input_data['Incentive_per_Ton_exponential'] = input_data['Tier'].map(tier_incentives)
+            input_data['Incentive_per_Ton_exponential'] = pd.to_numeric(input_data['Incentive_per_Ton_exponential'], errors='coerce')
+
+
+            input_data["Final_Incentive"] = round(
+                input_data["Incentive_per_Ton_exponential"] * 
+                (1 + input_data["Category_Overall"].map(category_bonus).fillna(0))
+            )
+            input_data["Perfomance_Bonus"] = input_data["Final_Incentive"] - input_data["Incentive_per_Ton_exponential"]
+
+            input_data["Incentive_per_Ton_exponential"] = round_nearest(input_data["Incentive_per_Ton_exponential"])
+            input_data["Perfomance_Bonus"] = round_nearest(input_data["Perfomance_Bonus"])
+            input_data["Final_Incentive"] = round_nearest(input_data["Final_Incentive"])
+            input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target"]).round(-1)
+            
+        elif incentive_type == "Average":
+            # 1. Dynamically generate min and max incentive around the average
+            min_incentive = int(avg_inc_pt * 0.6)
+            max_incentive = int(avg_inc_pt * 1.4)
+
+            # 2. Generate tier incentives based on exponential pattern
+            tier_incentives = get_tier_incentives('exponential', min_incentive, max_incentive)
+ 
+            # 3. Map base tier incentive to each dealer
+            input_data['Incentive_per_Ton_exponential'] = input_data['Tier'].map(tier_incentives)
+            input_data['Incentive_per_Ton_exponential'] = pd.to_numeric(input_data['Incentive_per_Ton_exponential'], errors='coerce')
+
+            # 4. Apply performance bonus (category-based)
+            input_data["Perfomance_Bonus"] = (
+                input_data["Incentive_per_Ton_exponential"] * 
+                input_data["Category_Overall"].map(category_bonus).fillna(0)
+            ).round()
+
+            input_data["Final_Incentive"] = (
+                input_data["Incentive_per_Ton_exponential"] + input_data["Perfomance_Bonus"]
+            ).round()
+
+            # 5. Calculate unscaled total payout
+            input_data["Predicted_Incentive"] = input_data["Final_Incentive"] * input_data["Predicted_Target"]
+            total_base_payout = input_data["Predicted_Incentive"].sum()
+
+            # 6. Compute scaling factor to match average-based total incentive cap
+            scaling_factor = total_incentive / total_base_payout if total_base_payout != 0 else 0
+
+            # 7. Scale each relevant component proportionally
+            input_data["Incentive_per_Ton_exponential"] = (input_data["Incentive_per_Ton_exponential"] * scaling_factor).round()
+            input_data["Perfomance_Bonus"] = (input_data["Perfomance_Bonus"] * scaling_factor).round()
+            input_data["Final_Incentive"] = (input_data["Final_Incentive"] * scaling_factor).round()
+            input_data["Incentive_per_Ton_exponential"] = round_nearest(input_data["Incentive_per_Ton_exponential"])
+            input_data["Perfomance_Bonus"] = round_nearest(input_data["Perfomance_Bonus"])
+            input_data["Final_Incentive"] = round_nearest(input_data["Final_Incentive"])
+            # 8. Recompute predicted incentive after scaling
+            input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target"]).round(-1)
+
+
+
+        # input_data["Final_Incentive"] = round(
+        #     input_data["Incentive_per_Ton_exponential"] * 
+        #     (1 + input_data["Category_Overall"].map(category_bonus).fillna(0))
+        # )
+        # input_data["Perfomance_Bonus"] = input_data["Final_Incentive"] - input_data["Incentive_per_Ton_exponential"]
+        # input_data["Predicted_Incentive"] = (input_data["Final_Incentive"] * input_data["Predicted_Target"]).round(-1)
+
         df = input_data
 
         # Get the columns in `input_data` that are not in `display_data`
@@ -321,7 +365,7 @@ with tab1:
         )
 
 
-        display_data.to_csv('/root/tata/tatasteel/Data/output.csv')
+        display_data.to_csv('Data/output.csv')
 
 
         column_labels = {
@@ -332,11 +376,11 @@ with tab1:
             "dealer_type": "Dealer Type",
             "Achieved_Type":"Target Achievement",
             "Category_Overall" : "Sales Performance",
-            "Jan_2425_Target" : "Previous Month's Target",
+            "Mar_2425_Target" : "Previous Month's Target",
             "Tier": "Incentive Tier",
             "Incentive_per_Ton_exponential": "Base Incentive",
-            "Perfomance_Bonus": "Perfomance Bonus",
-            "Final_Incentive" : "Final Incentive",
+            "Perfomance_Bonus": "Performance Bonus",
+            "Final_Incentive" : "Incentive per Ton",
             "Predicted_Target" : "Predicted Target",
             "Predicted_Incentive": "Predicted Incentive"
         }
@@ -351,7 +395,7 @@ with tab1:
             "Achieved_Type",
             "Category_Overall",
             "Tier",
-            "Jan_2425_Target",
+            "Mar_2425_Target",
             "Predicted_Target",
             "Incentive_per_Ton_exponential",
             "Perfomance_Bonus",
@@ -390,6 +434,18 @@ with tab1:
         df_to_display = df[display_columns].rename(columns=column_labels)
         df_incentive = df[incentive_columns].rename(columns=column_labels)
 
+        # Ensure "Not Set" is a valid category first
+        df_to_display['Incentive Tier'] = df_to_display['Incentive Tier'].cat.add_categories(['Not Set'])
+
+        # Now fill the NaNs
+        df_to_display['Incentive Tier'] = df_to_display['Incentive Tier'].fillna('Not Set')
+        df_to_display["Previous Month's Target"] = df_to_display["Previous Month's Target"].fillna(0)
+        df_to_display['Base Incentive'] = df_to_display['Base Incentive'].fillna(0)
+        df_to_display['Performance Bonus'] = df_to_display['Performance Bonus'].fillna(0)
+        df_to_display['Incentive per Ton'] = df_to_display['Incentive per Ton'].fillna(0)
+        df_to_display['Predicted Incentive'] = df_to_display['Predicted Incentive'].fillna(0)
+
+        df_to_display = df_to_display[df_to_display['Sales Performance'].ne('Inactive Dealer')] 
 
     with col_kpi_table:
 
@@ -410,7 +466,7 @@ with tab1:
         with col1:
             st.markdown(f"""
             <div class='kpi-card'>
-                <p>{df_to_display['Dealer Name'].nunique()}</p>
+                <p>{df_to_display['Dealer Code'].nunique()}</p>
                 <h4>Number of Dealers</h4>
             </div>
             """, unsafe_allow_html=True)
@@ -441,14 +497,14 @@ summary_table = (
     .groupby("Achieved_Type")
     .agg({
         "Dealer_Code": pd.Series.nunique,  # count of unique dealers
-        "Jan_2425_sales": "sum",
-        "Jan_2425_Target": "sum",
+        "Mar_2425_sales": "sum",
+        "Mar_2425_Target": "sum",
         "Predicted_Target": "sum"
         
     })
     .rename(columns={
-        "Jan_2425_sales": "January 2025 Sales",
-        "Jan_2425_Target": "January 2025 Target",
+        "Mar_2425_sales": "March 2025 Sales",
+        "Mar_2425_Target": "March 2025 Target",
         "Predicted_Target": "Predicted Target",
         "Dealer_Code": "No. of Dealers"
     })
@@ -457,8 +513,8 @@ summary_table = (
 
 # Convert amounts to integers (whole numbers)
 summary_table["No. of Dealers"] = summary_table["No. of Dealers"].astype(int)
-summary_table["January 2025 Sales"] = summary_table["January 2025 Sales"].astype(int)
-summary_table["January 2025 Target"] = summary_table["January 2025 Target"].astype(int)
+summary_table["March 2025 Sales"] = summary_table["March 2025 Sales"].astype(int)
+summary_table["March 2025 Target"] = summary_table["March 2025 Target"].astype(int)
 summary_table["Predicted Target"] = summary_table["Predicted Target"].astype(int)
 
 # Rename 'Achieved_Type' to 'Target Achievement'
@@ -485,15 +541,15 @@ summary_table = summary_table.sort_values("Target Achievement")
 # Append a Grand Total row
 grand_total = pd.DataFrame({
     "Target Achievement": ["Grand Total"],
-    "January 2025 Sales": [summary_table["January 2025 Sales"].sum()],
-    "January 2025 Target": [summary_table["January 2025 Target"].sum()],
+    "March 2025 Sales": [summary_table["March 2025 Sales"].sum()],
+    "March 2025 Target": [summary_table["March 2025 Target"].sum()],
     "Predicted Target": [summary_table["Predicted Target"].sum()],
     "No. of Dealers": [summary_table["No. of Dealers"].sum()]
 })
 
 # Final table
 summary_table = pd.concat([summary_table, grand_total], ignore_index=True)
-summary_table_display = summary_table.loc[:,["Target Achievement", "January 2025 Sales", "January 2025 Target", "Predicted Target"]].copy()
+summary_table_display = summary_table.loc[:,["Target Achievement", "March 2025 Sales", "March 2025 Target", "Predicted Target"]].copy()
 
 # Highlight Grand Total row
 def highlight_total_row(row):
@@ -505,14 +561,14 @@ def highlight_total_row(row):
 with tab3:
 
     # st.data_editor(target_sales_cross,key="cross_table")
-    st.subheader("January 2025 Summary, Dealer Count & Predicted Target by Achievement Type")
+    st.subheader("March 2025 Summary, Dealer Count & Predicted Target by Achievement Type")
     st.dataframe(summary_table.style.apply(highlight_total_row, axis=1), use_container_width=True)
 
     # Remove Grand Total row
     summary_chart_data = summary_table[summary_table["Target Achievement"] != "Grand Total"].copy()
 
     # Calculate averages
-    summary_chart_data["Avg Jan 2025 Target"] = summary_chart_data["January 2025 Target"] / summary_chart_data["No. of Dealers"]
+    summary_chart_data["Avg March 2025 Target"] = summary_chart_data["March 2025 Target"] / summary_chart_data["No. of Dealers"]
     summary_chart_data["Avg Predicted Target"] = summary_chart_data["Predicted Target"] / summary_chart_data["No. of Dealers"]
 
     # Apply custom order
@@ -527,13 +583,13 @@ with tab3:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("##### Average Jan 2025 Target per Dealer")
-        jan_target_chart = alt.Chart(summary_chart_data).mark_bar().encode(
+        st.markdown("##### Average March 2025 Target per Dealer")
+        mar_target_chart = alt.Chart(summary_chart_data).mark_bar().encode(
             x=alt.X("Target Achievement:N", sort=None, title="Achievement Type"),
-            y=alt.Y("Avg Jan 2025 Target:Q", title="Average Jan Target"),
-            tooltip=["Target Achievement", "Avg Jan 2025 Target"]
+            y=alt.Y("Avg March 2025 Target:Q", title="Average March Target"),
+            tooltip=["Target Achievement", "Avg March 2025 Target"]
         ).properties(width=350, height=400)
-        st.altair_chart(jan_target_chart, use_container_width=True)
+        st.altair_chart(mar_target_chart, use_container_width=True)
 
     with col2:
         st.markdown("##### Average Predicted Target per Dealer")
@@ -545,11 +601,15 @@ with tab3:
         st.altair_chart(pred_target_chart, use_container_width=True)
 
 #3 months
-recent_months_sales = ["Nov_2425_sales", "Dec_2425_sales", "Jan_2425_sales"]
-previous_months_sales = ["Aug_2425_sales", "Sep_2425_sales", "Oct_2425_sales"]
+recent_months_sales = ['Jan_2425_sales', 'Feb_2425_sales',
+       'Mar_2425_sales']
+previous_months_sales = ['Oct_2425_sales',
+       'Nov_2425_sales', 'Dec_2425_sales']
 
-recent_months_target = ["Nov_2425_Target", "Dec_2425_Target", "Jan_2425_Target"]
-previous_months_target = ["Aug_2425_Target", "Sep_2425_Target", "Oct_2425_Target"]
+recent_months_target = ['Jan_2425_Target', 'Feb_2425_Target',
+       'Mar_2425_Target']
+previous_months_target = ['Oct_2425_Target', 'Nov_2425_Target',
+       'Dec_2425_Target']
 
 # Calculate totals
 input_data["Recent_Sales"] = input_data[recent_months_sales].sum(axis=1)
@@ -669,8 +729,8 @@ with tab2:
     <div style='font-size: 12px; font-color: #1f4e79; padding: 5px 10px; background-color: #e0f7fa; border-left : 5px solid #1f4e79; border-radius: 5px;  margin-bottom: 10px;'>
         <strong><span style='color: #1f4e79;'>Note:</span></strong><br>
         <prev><span style='color: #1f4e79;'>    Quarter-on-quarter growth is calculated as the comparison between:</span></prev><br>
-        <prev> <span style='color: #1f4e79;'>   - <b>Recent Quarter:</b> November, December, January</span></prev><br>
-        <prev> <span style='color: #1f4e79;'>   - <b>Previous Quarter:</b> August, September, October</span></prev>
+        <prev> <span style='color: #1f4e79;'>   - <b>Recent Quarter:</b> January, February, March </span></prev><br>
+        <prev> <span style='color: #1f4e79;'>   - <b>Previous Quarter:</b> October, November, December</span></prev>
     </div>
     """,
     unsafe_allow_html=True

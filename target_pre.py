@@ -5,18 +5,19 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from sklearn.preprocessing import MinMaxScaler
 import os
 from datetime import datetime
+pd.set_option('display.max_columns', 200)
 
 # %%
 # Read file 
-df = pd.read_excel('/root/tata/tatasteel/Data/raw_data_1903_fy25_merged.xlsx')
+df = pd.read_csv('Data/final_raw_data_file_febmar.csv')
 df_visual = df.copy()
-df['new_market_potential'] = df['new_market_potential'].fillna(df['market_potential'])
+# df['new_market_potential'] = df['new_market_potential'].fillna(df['market_potential'])
 
 # df_display = df.copy() #For display only
 # df = df.fillna(0)
 # df_ones = df.copy()
 # df_ones = df_ones.replace(0, 1)
-
+df
 
 # %%
 sales_columns = ['Dealer_Code'] + [col for col in df.columns if "sales" in col]
@@ -24,12 +25,16 @@ sales_columns = ['Dealer_Code'] + [col for col in df.columns if "sales" in col]
 #sales_columns = ['Dealer_Code'] + [col for col in df.columns if "sales" in col]
 #incentive_columns = ['Dealer_Code'] + [col for col in df.columns if "Incentive" in col and 'ton' not in col]
 #incentive_per_ton_columns = ['Dealer_Code'] + [col for col in df.columns if "Incentive_per_ton" in col]
-cs_columns = ['Dealer_Code'] + [col for col in df.columns if "CS" in col]
+# cs_columns = ['Dealer_Code'] + [col for col in df.columns if "CS" in col]
 #monsoon_columns = ['Dealer_Code'] + [col for col in df.columns if "Monsoon" in col]
 target_columns = ['Dealer_Code'] + [col for col in df.columns if "Target" in col]
-other_colums = ['Dealer_Code','dealer_district','dealer_taluka','population','taluka_population','market_potential', 'new_market_potential']
+counter_columns = ['Dealer_Code'] + [col for col in df.columns if "counter" in col]
+
+other_columns = ['Dealer_Code'] + [col for col in df.columns if col not in sales_columns + target_columns + counter_columns]
+
+
 df_oth = df[['Dealer_Code','Dealer_Name','dealer_district','dealer_taluka','dealer_type',
-'population','taluka_population','market_potential', 'new_market_potential']]
+'population','taluka_population','market_potential']]
 oth_display = ['Dealer_Code'] #To add the the display column in the end
 
 # Splitting into two DataFrames
@@ -41,64 +46,62 @@ df_ts_sales = df[sales_columns]
 #df_monsoon = df[monsoon_columns]
 #df_ov_sales = df[ov_columns]
 df_target = df[target_columns]
-df_others = df[other_colums]
+df_others = df[other_columns]
+df_others
 
+df_retail_sales #Values are getting affected
 
+#%%
 
 #df_retail_sales.head(600)
 
-#Replacing the 2425 columns with the new values
-df_retail_sales = df_retail_sales[['Dealer_Code', 'Apr_2223_sales', 'May_2223_sales', 'Jun_2223_sales',
-       'Jul_2223_sales', 'Aug_2223_sales', 'Sep_2223_sales', 'Oct_2223_sales',
-       'Nov_2223_sales', 'Dec_2223_sales', 'Jan_2223_sales', 'Feb_2223_sales',
-       'Mar_2223_sales', 'Apr_2324_sales', 'May_2324_sales', 'Jun_2324_sales',
-       'Jul_2324_sales', 'Aug_2324_sales', 'Sep_2324_sales', 'Oct_2324_sales',
-       'Nov_2324_sales', 'Dec_2324_sales', 'Jan_2324_sales', 'Feb_2324_sales',
-       'Mar_2324_sales',
-        #'Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
-       #'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
-       #'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
-       #'Mar_2425_sales',
-       'Apr_2425_sales_new', 'May_2425_sales_new',
-       'Jun_2425_sales_new', 'Jul_2425_sales_new', 'Aug_2425_sales_new',
-       'Sep_2425_sales_new', 'Oct_2425_sales_new', 'Nov_2425_sales_new',
-       'Dec_2425_sales_new', 'Jan_2425_sales_new', 'Feb_2425_sales_new',
-       'Mar_2425_sales_new']].copy()
+# #Replacing the 2425 columns with the new values
+# df_retail_sales = df_retail_sales[['Dealer_Code', 'Apr_2223_sales', 'May_2223_sales', 'Jun_2223_sales',
+#        'Jul_2223_sales', 'Aug_2223_sales', 'Sep_2223_sales', 'Oct_2223_sales',
+#        'Nov_2223_sales', 'Dec_2223_sales', 'Jan_2223_sales', 'Feb_2223_sales',
+#        'Mar_2223_sales', 'Apr_2324_sales', 'May_2324_sales', 'Jun_2324_sales',
+#        'Jul_2324_sales', 'Aug_2324_sales', 'Sep_2324_sales', 'Oct_2324_sales',
+#        'Nov_2324_sales', 'Dec_2324_sales', 'Jan_2324_sales', 'Feb_2324_sales',
+#        'Mar_2324_sales',
+#         #'Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+#        #'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+#        #'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+#        #'Mar_2425_sales',
+#        'Apr_2425_sales_new', 'May_2425_sales_new',
+#        'Jun_2425_sales_new', 'Jul_2425_sales_new', 'Aug_2425_sales_new',
+#        'Sep_2425_sales_new', 'Oct_2425_sales_new', 'Nov_2425_sales_new',
+#        'Dec_2425_sales_new', 'Jan_2425_sales_new', 'Feb_2425_sales_new',
+#        'Mar_2425_sales_new']].copy()
 
-# Remove "_new" suffix from all column names that end with it
-df_retail_sales.columns = [col.replace('_new', '') if col.endswith('_new') else col for col in df_retail_sales.columns]
-df_retail_sales.columns
+# # Remove "_new" suffix from all column names that end with it
+# df_retail_sales.columns = [col.replace('_new', '') if col.endswith('_new') else col for col in df_retail_sales.columns]
+# df_retail_sales.columns
 
-df_target = df_target[['Dealer_Code', 'Apr_2223_Target', 'May_2223_Target', 'Jun_2223_Target',
-       'Jul_2223_Target', 'Aug_2223_Target', 'Sep_2223_Target',
-       'Oct_2223_Target', 'Nov_2223_Target', 'Dec_2223_Target',
-       'Jan_2223_Target', 'Feb_2223_Target', 'Mar_2223_Target',
-       'Apr_2324_Target', 'May_2324_Target', 'Jun_2324_Target',
-       'Jul_2324_Target', 'Aug_2324_Target', 'Sep_2324_Target',
-       'Oct_2324_Target', 'Nov_2324_Target', 'Dec_2324_Target',
-       'Jan_2324_Target', 'Feb_2324_Target', 'Mar_2324_Target',
-       #'Apr_2425_Target', 'May_2425_Target', 'Jun_2425_Target',
-       #'Jul_2425_Target', 'Aug_2425_Target', 'Sep_2425_Target',
-       'Apr_2425_Target_new', 'May_2425_Target_new', 'Jun_2425_Target_new',
-       'Jul_2425_Target_new', 'Aug_2425_Target_new', 'Sep_2425_Target_new',
-       'Oct_2425_Target_new', 'Nov_2425_Target_new', 'Dec_2425_Target_new',
-       'Jan_2425_Target_new', 'Feb_2425_Target_new', 'Mar_2425_Target_new']].copy()
+# df_target = df_target[['Dealer_Code', 'Apr_2223_Target', 'May_2223_Target', 'Jun_2223_Target',
+#        'Jul_2223_Target', 'Aug_2223_Target', 'Sep_2223_Target',
+#        'Oct_2223_Target', 'Nov_2223_Target', 'Dec_2223_Target',
+#        'Jan_2223_Target', 'Feb_2223_Target', 'Mar_2223_Target',
+#        'Apr_2324_Target', 'May_2324_Target', 'Jun_2324_Target',
+#        'Jul_2324_Target', 'Aug_2324_Target', 'Sep_2324_Target',
+#        'Oct_2324_Target', 'Nov_2324_Target', 'Dec_2324_Target',
+#        'Jan_2324_Target', 'Feb_2324_Target', 'Mar_2324_Target',
+#        #'Apr_2425_Target', 'May_2425_Target', 'Jun_2425_Target',
+#        #'Jul_2425_Target', 'Aug_2425_Target', 'Sep_2425_Target',
+#        'Apr_2425_Target_new', 'May_2425_Target_new', 'Jun_2425_Target_new',
+#        'Jul_2425_Target_new', 'Aug_2425_Target_new', 'Sep_2425_Target_new',
+#        'Oct_2425_Target_new', 'Nov_2425_Target_new', 'Dec_2425_Target_new',
+#        'Jan_2425_Target_new', 'Feb_2425_Target_new', 'Mar_2425_Target_new']].copy()
 
-# Remove "_new" suffix from all column names that end with it
-df_target.columns = [col.replace('_new', '') if col.endswith('_new') else col for col in df_target.columns]
-df_target.columns
+# # Remove "_new" suffix from all column names that end with it
+# df_target.columns = [col.replace('_new', '') if col.endswith('_new') else col for col in df_target.columns]
+# df_target.columns
 
 #For display
 df_display = df_retail_sales.copy()
 df_display = df_display.merge(df_target, on = "Dealer_Code", how = 'left')
 
-# %%
+
 # Identify active dealers and total months of data 
-# 2022-2023,
-# 2023-24
-# 24-25
-
-
 def calculate_active_months(df):
     sales_columns = [col for col in df.columns if "sales" in col]
     
@@ -131,22 +134,24 @@ def calculate_active_months(df):
     ).reset_index()
 
     return grouped_df
-    
+
+# df[sales_columns + target_columns] = df[sales_columns + target_columns].fillna(0)
 df_retail_sales = df_retail_sales.fillna(0)
 result_df = calculate_active_months(df_retail_sales)
-last_months = ['Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
+last_months = ['Jan_2425_sales', 'Feb_2425_sales', 'Mar_2425_sales']
 
 # Filter out dealers that do not have a non-zero value in Jan, Feb, or Mar 2324
 grouped_df_filtered = result_df[result_df['Last_Active_Month'].isin(last_months)]
     
 # Join the result with the original dataframe based on Dealer_Code
 df_merged = df_retail_sales.merge(grouped_df_filtered[['Dealer_Code', 'Total_Active_Months']], on='Dealer_Code', how='left')
-
+df_merged
+#%%
 #Dropping inactive dealers
-df_merged_dropped = df_merged.dropna(subset=['Total_Active_Months']).copy()
+# df_merged_dropped = df_merged.dropna(subset=['Total_Active_Months']).copy()
 
 #Editing the display to include only the active dealers
-df_display = df_display[df_display['Dealer_Code'].isin(df_merged_dropped['Dealer_Code'])]
+# df_display = df_display[df_display['Dealer_Code'].isin(df_merged_dropped['Dealer_Code'])]
 
 # df_merged.head(600)
 
@@ -161,12 +166,10 @@ df_display = df_display[df_display['Dealer_Code'].isin(df_merged_dropped['Dealer
 # df_des = pd.merge(df_des, filtered_dealers, on=['Dealer_Code', 'dealer_district'], how='inner')
 # df_des.head()
 
-# %%
-df_original_reshaped = df_merged
-df_original_reshaped = df_original_reshaped.merge(df_others, on='Dealer_Code', how='left')
-df_original_reshaped.head()
+# df_original_reshaped = df_merged
+# df_original_reshaped = df_original_reshaped.merge(df_others, on='Dealer_Code', how='left')
+# df_original_reshaped.head()
 
-# %%
 def convert_fy_to_price(col_name):
     try:
         # Keep 'Dealer_Code' unchanged
@@ -195,19 +198,19 @@ def convert_fy_to_price(col_name):
 # df_ov_sales.rename(columns={col: convert_fy_to_price(col) for col in df_ov_sales.columns}, inplace=True) 
 
 # df_des.rename(columns={col: convert_fy_to_price(col) for col in df_des.columns}, inplace=True)
-df_original_reshaped.rename(columns={col: convert_fy_to_price(col) for col in df_original_reshaped.columns}, inplace=True)
+# df_original_reshaped.rename(columns={col: convert_fy_to_price(col) for col in df_original_reshaped.columns}, inplace=True)
 
-# %%
-# reshape the dataset
-month_year_cols = [col for col in df_original_reshaped.columns if '-' in col] 
+# # %%
+# # reshape the dataset
+# month_year_cols = [col for col in df_original_reshaped.columns if '-' in col] 
 
-df_original_reshaped = df_original_reshaped.melt(id_vars=['Dealer_Code', 'Total_Active_Months', 'dealer_district', 
-                             'dealer_taluka', 'population', 'taluka_population'], 
-                    value_vars=month_year_cols, var_name='Month-Year', value_name='Value')
+# df_original_reshaped = df_original_reshaped.melt(id_vars=['Dealer_Code', 'Total_Active_Months', 'dealer_district', 
+#                              'dealer_taluka', 'population', 'taluka_population'], 
+#                     value_vars=month_year_cols, var_name='Month-Year', value_name='Value')
 
-df_original_reshaped['Date'] = pd.to_datetime(df_original_reshaped['Month-Year'], format='%b-%y') + pd.offsets.MonthBegin(0)
+# df_original_reshaped['Date'] = pd.to_datetime(df_original_reshaped['Month-Year'], format='%b-%y') + pd.offsets.MonthBegin(0)
 
-df_original_reshaped.set_index('Date', inplace=True)
+# df_original_reshaped.set_index('Date', inplace=True)
 
 # For deseasonalization
 # # reshape the dataset
@@ -222,9 +225,8 @@ df_original_reshaped.set_index('Date', inplace=True)
 # df_melted.set_index('Date', inplace=True)
 
 # %%
-df_original_reshaped.head()
+# df_original_reshaped.head()
 
-# %%
 # Function to detect outliers using IQR and replace with rolling 6-month average at the row level
 def detect_outliers_replace_with_avg(df, columns, window=6):
     for index, row in df.iterrows():
@@ -236,7 +238,7 @@ def detect_outliers_replace_with_avg(df, columns, window=6):
         upper_bound = Q3 + 2 * IQR
         
         # Identify outliers
-        outliers = (row_values < lower_bound) | (row_values > upper_bound)
+        outliers = (row_values > upper_bound)
         
         # Compute rolling 6-month average for the row
         rolling_avg = row_values.rolling(window=min(window, len(row_values)), min_periods =1).mean()
@@ -246,18 +248,18 @@ def detect_outliers_replace_with_avg(df, columns, window=6):
         df.loc[index, columns] = row_values
     return df
 
-# %%
 sales_columns_2223 = [col for col in df_retail_sales.columns if "sales" in col and '2223' in col]
 sales_columns_2324 = [col for col in df_retail_sales.columns if "sales" in col and '2324' in col]
 sales_columns_2425 = [col for col in df_retail_sales.columns if "sales" in col and '2425' in col]
-print(sales_columns_2425)
 
 # %%
-df_merged_1 = detect_outliers_replace_with_avg(df_merged, sales_columns_2223)
-df_merged_1 = detect_outliers_replace_with_avg(df_merged_1, sales_columns_2324)
-df_merged_1 = detect_outliers_replace_with_avg(df_merged_1, sales_columns_2425)
+# df_merged_1 = detect_outliers_replace_with_avg(df_merged, sales_columns_2223)
+# df_merged_1 = detect_outliers_replace_with_avg(df_merged_1, sales_columns_2324)
+# df_merged_1 = detect_outliers_replace_with_avg(df_merged_1, sales_columns_2425)
 #df_merged_1 = df_merged_1.replace(0, 1)
-df_merged_1.head()
+df_merged_1 = df_merged.copy()
+
+# df_merged_1[df_merged_1['Dealer_Code']== 'SIPA443'] #Values are getting affected
 
 # %%
 #df_merged_1.head()
@@ -327,7 +329,7 @@ df_merged_1.head()
 # %%
 #calculate CMGR
 
-df_fy = df_original_reshaped[(df_original_reshaped.index >= '2023-04-01') & (df_original_reshaped.index <= '2025-01-31')]
+# df_fy = df_original_reshaped[(df_original_reshaped.index >= '2023-04-01') & (df_original_reshaped.index <= '2025-01-31')]
 
 def calculate_cmgr(start_value, end_value, months):
     if pd.isna(start_value) or pd.isna(end_value) or start_value == 0:
@@ -336,8 +338,10 @@ def calculate_cmgr(start_value, end_value, months):
 
 
 # Create a new DataFrame containing only 'Dealer_Code'
-df_cmgr = df_fy[['Dealer_Code']].drop_duplicates().reset_index(drop=True)
+df_cmgr = df[['Dealer_Code']].drop_duplicates().reset_index(drop=True)
 
+df_cmgr.shape
+#%%
 
 # # comment Calculate CMGR for 3-month periods
 # cmgr_last_3m_1_des = df_fy.groupby('Dealer_Code')['deseasonalized_sales'].apply(
@@ -406,37 +410,40 @@ df_cmgr = df_cmgr.merge(df_merged_1, on = 'Dealer_Code', how = 'left')
 # # %%
 df_cmgr = df_cmgr.merge(df_target,on='Dealer_Code',how = 'left')
 
-#df_cmgr.head()
+df_cmgr.columns
 
 # %%
 df_cmgr = df_cmgr[['Dealer_Code',
                     # 'CMGR_3m_1_des','CMGR_3m_2_des','CMGR_6m_1_des','CMGR_6m_2_des',
                     # 'CMGR_3m_1','CMGR_3m_2',
                     
-                   # 'Jan_2324_sales',
-                   'Feb_2324_sales', 'Mar_2324_sales',
-                    'Apr_2425_sales','May_2425_sales','Jun_2425_sales', 
-                    'Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales',
-                   'Oct_2425_sales', 'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales',
-                   
+                   'Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+                   'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+                   'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+                   'Mar_2425_sales',
 
                      
-                   # 'Jan_2324_Target',
-                   'Feb_2324_Target', 'Mar_2324_Target',
-                    'Apr_2425_Target','May_2425_Target','Jun_2425_Target', 
-                    'Jul_2425_Target', 'Aug_2425_Target','Sep_2425_Target',
-                  'Oct_2425_Target', 'Nov_2425_Target', 'Dec_2425_Target','Jan_2425_Target']]
+                  
+                    'Apr_2425_Target',
+                        'May_2425_Target', 'Jun_2425_Target', 'Jul_2425_Target',
+                        'Aug_2425_Target', 'Sep_2425_Target', 'Oct_2425_Target',
+                        'Nov_2425_Target', 'Dec_2425_Target', 'Jan_2425_Target',
+                        'Feb_2425_Target', 'Mar_2425_Target']]
+
+df_cmgr
 #
 #  %%
 # venkate added for target month count 01:10 AM
 
-sales_cols = ['Aug_2425_sales','Sep_2425_sales', 'Oct_2425_sales', 'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
+sales_cols = ['Oct_2425_sales',
+                   'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+                   'Mar_2425_sales']
 target_cols = [col.replace('sales', 'Target') for col in sales_cols]
 
-sales_cols_1y = ['Feb_2324_sales', 'Mar_2324_sales',
-                    'Apr_2425_sales','May_2425_sales','Jun_2425_sales', 
-                    'Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales',
-                   'Oct_2425_sales', 'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
+sales_cols_1y = ['Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+                   'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+                   'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+                   'Mar_2425_sales']
 
 target_cols_1y = [col.replace('sales', 'Target') for col in sales_cols_1y]
 
@@ -444,19 +451,24 @@ target_cols_1y = [col.replace('sales', 'Target') for col in sales_cols_1y]
 df_display_sales_targets = df_display[oth_display + sales_cols_1y + target_cols_1y]
 # Convert sales and target columns to nearest integer
 df_display_sales_targets[sales_cols_1y + target_cols_1y] = df_display_sales_targets[sales_cols_1y + target_cols_1y].round().astype('Int64')
+df_display_sales_targets
 
-
-
+#%%
 # Compare saless with targets
-achievement = (df_cmgr[sales_cols].values >= df_cmgr[target_cols].values).astype(int)
+# Get sales and target arrays
+sales_array = df_cmgr[sales_cols].values
+target_array = df_cmgr[target_cols].values
 
+
+# Only count where sales >= target AND target > 0
+achievement = ((sales_array >= target_array) & (target_array > 0)).astype(int)
 # Count the months where target was achieved
 df_cmgr['Achieved_Months_2425'] = achievement.sum(axis=1)
 
 # Display result
-print(df_cmgr[['Dealer_Code', 'Achieved_Months_2425']])
+# print(df_cmgr[['Dealer_Code', 'Achieved_Months_2425']])
 
-
+df_cmgr[df_cmgr['Dealer_Code']=='SIPA443']
 # %%
 #df_cmgr.head()
 
@@ -477,9 +489,10 @@ df_cmgr['Achieved_Category'] = pd.cut(df_cmgr['Achieved_Months_2425'],
                                  labels=labels, 
                                  right=True)
 
-df_cmgr.head()
+# df_cmgr.groupby('Achieved_Category')['Dealer_Code'].nunique()
+#%%
 
-
+# df_cmgr.shape
 # %%
 sales_cols = [col for col in df_cmgr.columns if 'sales' in col]
 
@@ -490,8 +503,9 @@ rolling_avg_df = df_cmgr[sales_cols].rolling(window=6, axis=1).mean()
 df_cmgr['Rolling_Avg_6M'] = rolling_avg_df.iloc[:, -1]  # Last available value for each dealer
 
 # Display Result
-print(df_cmgr[['Dealer_Code', 'Rolling_Avg_6M']])
+df_cmgr[['Dealer_Code', 'Rolling_Avg_6M']]
 
+#%%
 df_pattern = df_cmgr
 
 
@@ -500,16 +514,18 @@ df_pattern.head()
 
 # %%
 # Set Current Month Target using the correct column
-df_cmgr['Current_Month_Target'] = df_cmgr['Jan_2425_Target']
+df_cmgr['Current_Month_Target'] = df_cmgr['Mar_2425_Target']
 
+df_cmgr['Current_Month_Target']
 # %%
 # Identify last 3 months for averaging
-last_6_months = ['Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales', 'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
+last_6_months = ['Oct_2425_sales',
+                   'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+                   'Mar_2425_sales']
 
-# %%
 # Compute Last 3-Month Average
-df_cmgr['Last_3_Month_Avg'] = df_cmgr[last_6_months].apply(lambda x: x[x >= 10].tail(3).mean(), axis=1)
-
+df_cmgr['Last_3_Month_Avg'] = df_cmgr[last_6_months].apply(lambda x: x[x >= 5].tail(3).mean(), axis=1)
+df_cmgr['Last_3_Month_Avg']
 # %%
 # df_cmgr[df_cmgr['Dealer_Code'] == 'SIPT299']
 
@@ -568,20 +584,18 @@ def apply_percentage_increase(current_target, avg, flag):
 
  # Apply predicted target logic
 df_cmgr['Predicted_Target'] = df_cmgr.apply(lambda row:
-    apply_percentage_increase(row['Jan_2425_Target'], row['Last_3_Month_Avg'], row['Achieved_Category']), axis=1).fillna(0).astype(int) 
+    apply_percentage_increase(row['Mar_2425_Target'], row['Last_3_Month_Avg'], row['Achieved_Category']), axis=1).fillna(0).astype(int) 
 
 df_cmgr['Predicted_Target_R'] = (df_cmgr['Predicted_Target'] / 5).apply(np.ceil).fillna(0).astype(int) * 5
 
-# Calculate the total of the predicted target rounded values
-total_predicted_target = df_cmgr['Predicted_Target_R'].sum()
+df_cmgr['Predicted_Target_R'].sum()
+#%%
 
-# Calculate percentage distribution of the predicted target
-df_cmgr['Percentage_PT_Dist'] = df_cmgr['Predicted_Target_R'] / total_predicted_target
-
-
-last_6_months = ['Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales']
+last_6_months = ['Jan_2425_sales', 'Feb_2425_sales',
+                   'Mar_2425_sales']
 df_cmgr['Last_3_Month_Sal'] = df_cmgr[last_6_months].sum(axis=1)
 
+#%%
 
 mapping = {
     "5_6": "High Achievement",
@@ -603,7 +617,18 @@ df_cmgr["Predicted_Target_R"] = np.where(
    df_cmgr["Predicted_Target_R"]
 )
 
+# Calculate the total of the predicted target rounded values
+total_predicted_target = df_cmgr['Predicted_Target_R'].sum()
+print(total_predicted_target)
+#%%
+# Calculate percentage distribution of the predicted target
+df_cmgr['Percentage_PT_Dist'] = df_cmgr['Predicted_Target_R'] / total_predicted_target
 
+#Normalising
+df_cmgr['Percentage_PT_Dist'] = df_cmgr['Percentage_PT_Dist'] / df_cmgr['Percentage_PT_Dist'].sum()
+
+df_cmgr[df_cmgr['Achieved_Type'] == 'Target Not Set']
+#%%
 
 # # Define percentage increase based on flag and value ranges
 # def apply_percentage_increase(current_target, avg, flag):
@@ -774,33 +799,35 @@ df_cmgr["Predicted_Target_R"] = np.where(
 #          'Achieved_Category','Predictive_Target']]
 # df_cmgr.head(500)
 
-
+df_cmgr.columns
 # %%
 
 
 # df_pattern = df_cmgr
 
 # Define new 6-month columns from Aug_2425 to Jan_2425
-calc_cols = ["Aug_2425_sales", "Sep_2425_sales", "Oct_2425_sales",
-             "Nov_2425_sales", "Dec_2425_sales", "Jan_2425_sales"]
+calc_cols = ['Oct_2425_sales',
+                   'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+                   'Mar_2425_sales']
 
-target_cols = ["Aug_2425_Target", "Sep_2425_Target", "Oct_2425_Target",
-               "Nov_2425_Target", "Dec_2425_Target", "Jan_2425_Target"]
+target_cols = ['Oct_2425_Target', 'Nov_2425_Target',
+       'Dec_2425_Target', 'Jan_2425_Target', 'Feb_2425_Target',
+       'Mar_2425_Target']
 
 # Mapping each sales month to the corresponding past 6 months
 past_6m_mapping = {
-    "Aug_2425_sales": ["Feb_2324_sales", "Mar_2324_sales", "Apr_2425_sales",
-                       "May_2425_sales", "Jun_2425_sales", "Jul_2425_sales"],
-    "Sep_2425_sales": ["Mar_2324_sales", "Apr_2425_sales", "May_2425_sales",
-                       "Jun_2425_sales", "Jul_2425_sales", "Aug_2425_sales"],
-    "Oct_2425_sales": ["Apr_2425_sales", "May_2425_sales", "Jun_2425_sales",
-                       "Jul_2425_sales", "Aug_2425_sales", "Sep_2425_sales"],
-    "Nov_2425_sales": ["May_2425_sales", "Jun_2425_sales", "Jul_2425_sales",
-                       "Aug_2425_sales", "Sep_2425_sales", "Oct_2425_sales"],
-    "Dec_2425_sales": ["Jun_2425_sales", "Jul_2425_sales", "Aug_2425_sales",
-                       "Sep_2425_sales", "Oct_2425_sales", "Nov_2425_sales"],
-    "Jan_2425_sales": ["Jul_2425_sales", "Aug_2425_sales", "Sep_2425_sales",
-                       "Oct_2425_sales", "Nov_2425_sales", "Dec_2425_sales"]
+    'Oct_2425_sales': ['Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+                      'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales'],
+    'Nov_2425_sales': ['May_2425_sales', 'Jun_2425_sales','Jul_2425_sales',
+                       'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales'],
+    'Dec_2425_sales': ['Jun_2425_sales','Jul_2425_sales', 'Aug_2425_sales',
+                       'Sep_2425_sales', 'Oct_2425_sales','Nov_2425_sales'],
+    'Jan_2425_sales' : ['Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales',
+                       'Oct_2425_sales', 'Nov_2425_sales', 'Dec_2425_sales'],
+    'Feb_2425_sales': ['Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+                       'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales'],
+    'Mar_2425_sales' : ['Sep_2425_sales', 'Oct_2425_sales', 'Nov_2425_sales',
+                       'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales']
 }
 
 #Compute rolling average for past 6 months
@@ -837,6 +864,9 @@ df_pattern[["Sales_Pattern_Overall", "Target_Pattern_Overall"]] = df_pattern.app
 
 # Dealer Classification Function (Overall Only for Last 6 Months)
 def classify_dealer(sales_pattern, target_pattern):
+
+    if sales_pattern == "HHHHHH" and target_pattern == "NNNNNN":
+        return "Inactive Dealer"
     h_count, l_count = sales_pattern.count("H"), sales_pattern.count("L")
     a_count, n_count = target_pattern.count("A"), target_pattern.count("N")
 
@@ -863,23 +893,26 @@ df_pattern["Category_Overall"] = df_pattern.apply(
 final_columns = ["Dealer_Code"] + sales_cols + target_cols + \
     ["Sales_Pattern_Overall", "Target_Pattern_Overall", "Category_Overall"]
 
-# df_output = df_pattern[final_columns]
-# df_output.head()
-
+df_output = df_pattern[final_columns]
+df_cmgr.columns
+#%%
 #--------######## venkatesh added 02-24-2025 ----------##########
 
-print('verification df_oth  :',df_oth.columns)
+print('verification df_oth  :',df_others.columns)
 df_cmgr = df_cmgr[['Dealer_Code',
-         'Feb_2324_sales','Mar_2324_sales', 'Apr_2425_sales','May_2425_sales',
-         'Jun_2425_sales', 'Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales',
-         'Oct_2425_sales','Nov_2425_sales','Dec_2425_sales','Jan_2425_sales',
-         'Feb_2324_Target','Mar_2324_Target','Apr_2425_Target','May_2425_Target',
-         'Jun_2425_Target','Jul_2425_Target', 'Aug_2425_Target','Sep_2425_Target',
-         'Oct_2425_Target','Nov_2425_Target','Dec_2425_Target','Jan_2425_Target',
+         'Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+       'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+       'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+       'Mar_2425_sales', 'Apr_2425_Target', 'May_2425_Target',
+       'Jun_2425_Target', 'Jul_2425_Target', 'Aug_2425_Target',
+       'Sep_2425_Target', 'Oct_2425_Target', 'Nov_2425_Target',
+       'Dec_2425_Target', 'Jan_2425_Target', 'Feb_2425_Target',
+       'Mar_2425_Target',
          'Sales_Pattern_Overall', 'Target_Pattern_Overall',
          'Achieved_Type','Predicted_Target','Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall']]
     #.to_csv('output/predicted_target_0204_0.csv')
-
+df_cmgr
+#%%
 # Merge metrics from df_cmgr into df_display_sales_targets
 df_display_final = df_display_sales_targets.merge(
     df_cmgr[['Dealer_Code', 'Sales_Pattern_Overall', 'Target_Pattern_Overall',
@@ -887,7 +920,8 @@ df_display_final = df_display_sales_targets.merge(
     on='Dealer_Code',
     how='left'
 )
-
+df_display_final.shape
+#%%
 # Make sure the output folder exists
 os.makedirs("output", exist_ok=True)
 
@@ -903,13 +937,17 @@ print(f"File saved successfully")
 print('verification df_cmgr  :',df_cmgr.columns)
 
 # Merge df_cmgr and df_oth
-df_display_final = pd.merge(df_display_final, df_oth, on = "Dealer_Code", how = 'left')
-df_final = pd.merge(df_cmgr, df_oth, on='Dealer_Code', how='left')
+df_display_final = pd.merge(df_display_final, df_others, on = "Dealer_Code", how = 'left')
+df_final = pd.merge(df_cmgr, df_others, on='Dealer_Code', how='left')
 print('verification df_final:', df_final.columns)
 
+df_display_final
+#%%
+df_final
+#%%
 # Calculate MarketSizePer1000
-df_final['MarketSizePer1000'] = (df_final['new_market_potential'] / df_final['population']) * 1000
-df_display_final['MarketSizePer1000'] = df_final['MarketSizePer1000']
+# df_final['MarketSizePer1000'] = (df_final['market_potential'] / df_final['population']) * 1000
+# df_display_final['MarketSizePer1000'] = df_final['MarketSizePer1000']
 # Identify sales columns dynamically from df_final (not df)
 sales_columns = [col for col in df_final.columns if '_sales' in col]
 
@@ -920,12 +958,13 @@ sales_columns = [col for col in df_final.columns if '_sales' in col]
 last_6_months = sales_columns[-6:]  # Picks the last 6 sales columns
 
 # Calculate the average sales for the last 6 months
-df_final['AVG_SALES'] = df_final[last_6_months].mean(axis=1)
-df_display_final['AVG_SALES'] = df_final['AVG_SALES']
+# df_final['AVG_SALES'] = df_final[last_6_months].mean(axis=1)
+# df_display_final['AVG_SALES'] = df_final['AVG_SALES']
 
 # Select last 12 months dynamically
 last_12_months = sales_columns[-12:]  # Picks the last 6 sales columns
-
+last_12_months
+#%%
 # Calculate the average sales for the last 12 months
 df_final['AP_12'] = df_final[last_12_months].mean(axis=1)
 df_display_final['AP_12'] = df_final['AP_12']
@@ -942,8 +981,8 @@ counter_columns = [col for col in df.columns if '_counter' in col]
 #Select last 3 months dynamically
 last_3_counter = counter_columns[-3:]  # Picks the last 3 counter columns
 df['counter_sum'] = df[last_3_counter].sum(axis=1)
-
-
+df[['Dealer_Code', last_3_counter[-1]]]
+#%%
 last_month_counter = counter_columns[-1:] 
 df['last_month_counter'] = df[last_month_counter]
 
@@ -954,49 +993,63 @@ df = df.replace(0,1)
 print('Counter Columns:', counter_columns)
 print('Last 3 Counter Columns:', last_3_counter)
 df_final['sales_by_counter_3M'] = (df['Last_month_sales'] / df['counter_sum'])
-df_final['counter_market_ratio'] = (df['last_month_counter'] / df['new_market_potential'])
+df_final['counter_market_ratio'] = (df['last_month_counter'] / df['market_potential'])
 df_display_final['sales_by_counter_3M'] = df_final['sales_by_counter_3M']
 df_display_final['counter_market_ratio'] = df_final['counter_market_ratio']
 
 scaler = MinMaxScaler()
 df_final['NORM_counter_market_ratio'] = scaler.fit_transform(df_final[['counter_market_ratio']])
 df_final['NORM_sales_by_counter_3M'] = scaler.fit_transform(df_final[['sales_by_counter_3M']])
-df_final['AVG_SALES-N'] = scaler.fit_transform(df_final[['AVG_SALES']])
-df_final['MarketSizePer1000_N'] = scaler.fit_transform(df_final[['MarketSizePer1000']])
+# df_final['AVG_SALES-N'] = scaler.fit_transform(df_final[['AVG_SALES']])
+# df_final['MarketSizePer1000_N'] = scaler.fit_transform(df_final[['MarketSizePer1000']])
 
 #for display
 df_display_final['NORM_counter_market_ratio'] = df_final['NORM_counter_market_ratio']
 df_display_final['NORM_sales_by_counter_3M'] = df_final['NORM_sales_by_counter_3M']
-df_display_final['AVG_SALES-N'] = df_final['AVG_SALES-N']
-df_display_final['MarketSizePer1000_N'] = df_final['MarketSizePer1000_N']
+# df_display_final['AVG_SALES-N'] = df_final['AVG_SALES-N']
+# df_display_final['MarketSizePer1000_N'] = df_final['MarketSizePer1000_N']
 
+df_final.columns
+#%%
 
 df_final = df_final[['Dealer_Code','Dealer_Name','dealer_district','dealer_type', 'dealer_taluka',
-         'Feb_2324_sales','Mar_2324_sales', 'Apr_2425_sales','May_2425_sales',
-         'Jun_2425_sales', 'Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales',
-         'Oct_2425_sales','Nov_2425_sales','Dec_2425_sales','Jan_2425_sales',
-         'Feb_2324_Target','Mar_2324_Target','Apr_2425_Target','May_2425_Target',
-         'Jun_2425_Target','Jul_2425_Target','Aug_2425_Target','Sep_2425_Target',
-         'Oct_2425_Target','Nov_2425_Target','Dec_2425_Target','Jan_2425_Target',
+         'Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+       'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+       'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+       'Mar_2425_sales', 'Apr_2425_Target', 'May_2425_Target',
+       'Jun_2425_Target', 'Jul_2425_Target', 'Aug_2425_Target',
+       'Sep_2425_Target', 'Oct_2425_Target', 'Nov_2425_Target',
+       'Dec_2425_Target', 'Jan_2425_Target', 'Feb_2425_Target',
+       'Mar_2425_Target',
          'Sales_Pattern_Overall', 'Target_Pattern_Overall',
          'Achieved_Type', 'Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall',
-         'new_market_potential', 'AP_12',
+         'market_potential', 'AP_12', 'CS',
          'NORM_counter_market_ratio','NORM_sales_by_counter_3M',
-         'AVG_SALES-N','MarketSizePer1000_N']]
+        #  'AVG_SALES-N','MarketSizePer1000_N'
+        ]]
 
 df_display_final = df_display_final[['Dealer_Code','Dealer_Name','dealer_district','dealer_type', 'dealer_taluka',
-         'Feb_2324_sales','Mar_2324_sales', 'Apr_2425_sales','May_2425_sales',
-         'Jun_2425_sales', 'Jul_2425_sales', 'Aug_2425_sales','Sep_2425_sales',
-         'Oct_2425_sales','Nov_2425_sales','Dec_2425_sales','Jan_2425_sales',
-         'Feb_2324_Target','Mar_2324_Target','Apr_2425_Target','May_2425_Target',
-         'Jun_2425_Target','Jul_2425_Target','Aug_2425_Target','Sep_2425_Target',
-         'Oct_2425_Target','Nov_2425_Target','Dec_2425_Target','Jan_2425_Target',
+         'Apr_2425_sales', 'May_2425_sales', 'Jun_2425_sales',
+       'Jul_2425_sales', 'Aug_2425_sales', 'Sep_2425_sales', 'Oct_2425_sales',
+       'Nov_2425_sales', 'Dec_2425_sales', 'Jan_2425_sales', 'Feb_2425_sales',
+       'Mar_2425_sales', 'Apr_2425_Target', 'May_2425_Target',
+       'Jun_2425_Target', 'Jul_2425_Target', 'Aug_2425_Target',
+       'Sep_2425_Target', 'Oct_2425_Target', 'Nov_2425_Target',
+       'Dec_2425_Target', 'Jan_2425_Target', 'Feb_2425_Target',
+       'Mar_2425_Target',
          'Sales_Pattern_Overall', 'Target_Pattern_Overall',
          'Achieved_Type', 'Predicted_Target_R', 'Percentage_PT_Dist', 'Category_Overall',
-         'new_market_potential', 'AP_12',
+         'market_potential', 'AP_12','CS',
          'NORM_counter_market_ratio','NORM_sales_by_counter_3M',
-         'AVG_SALES-N','MarketSizePer1000_N']]
+        #  'AVG_SALES-N','MarketSizePer1000_N'
+        ]]
+#%%
+df_display_final.shape
 
+#%%
+print(df_final['CS'].info())
+
+#%%
 print('*********************target file loaded******************************')
 
 # %%
