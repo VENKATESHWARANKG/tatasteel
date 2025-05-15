@@ -525,7 +525,7 @@ last_6_months = ['Oct_2425_sales',
 
 # Compute Last 3-Month Average
 df_cmgr['Last_3_Month_Avg'] = df_cmgr[last_6_months].apply(lambda x: x[x >= 5].tail(3).mean(), axis=1)
-df_cmgr['Last_3_Month_Avg']
+
 # %%
 # df_cmgr[df_cmgr['Dealer_Code'] == 'SIPT299']
 
@@ -588,7 +588,7 @@ df_cmgr['Predicted_Target'] = df_cmgr.apply(lambda row:
 
 df_cmgr['Predicted_Target_R'] = (df_cmgr['Predicted_Target'] / 5).apply(np.ceil).fillna(0).astype(int) * 5
 
-df_cmgr['Predicted_Target_R'].sum()
+df_cmgr[df_cmgr['Dealer_Code'] == 'SIPA021']
 #%%
 
 last_6_months = ['Jan_2425_sales', 'Feb_2425_sales',
@@ -619,7 +619,7 @@ df_cmgr["Predicted_Target_R"] = np.where(
 
 # Calculate the total of the predicted target rounded values
 total_predicted_target = df_cmgr['Predicted_Target_R'].sum()
-print(total_predicted_target)
+df_cmgr[df_cmgr['Dealer_Code'] == 'SIPA021']
 #%%
 # Calculate percentage distribution of the predicted target
 df_cmgr['Percentage_PT_Dist'] = df_cmgr['Predicted_Target_R'] / total_predicted_target

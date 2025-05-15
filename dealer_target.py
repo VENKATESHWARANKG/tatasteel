@@ -118,7 +118,8 @@ except FileNotFoundError:
 
 # merge data
 
-input_data = df_tar.copy()
+input_data = df_tar[df_tar['Category_Overall'] != 'Inactive Dealer'].copy()
+df_dis = df_dis[df_dis['Category_Overall'] != 'Inactive Dealer'].copy()
 
 with st.expander("🔍 Tab Descriptions & Purpose"):
     st.markdown("""
@@ -241,6 +242,11 @@ with tab1:
         input_data['SOB'] = (input_data['AP_12'].astype(float) / input_data['CS'].astype(float)) * 100
         input_data['MPA'] = input_data['MPA'].clip(upper=100)
         input_data['SOB'] = input_data['SOB'].clip(upper=100)
+
+        input_data['MPA'] = input_data['MPA'].fillna(0)
+        input_data['SOB'] = input_data['SOB'].fillna(0)
+
+
         input_data['AP_normalized'] = (input_data['AP_12'] - input_data['AP_12'].min()) / (input_data['AP_12'].max() - input_data['AP_12'].min())
         input_data['AP_normalized'] = input_data['AP_normalized'] * 100
 
@@ -445,7 +451,7 @@ with tab1:
         df_to_display['Incentive per Ton'] = df_to_display['Incentive per Ton'].fillna(0)
         df_to_display['Predicted Incentive'] = df_to_display['Predicted Incentive'].fillna(0)
 
-        df_to_display = df_to_display[df_to_display['Sales Performance'].ne('Inactive Dealer')] 
+        # df_to_display = df_to_display[df_to_display['Sales Performance'].ne('Inactive Dealer')] 
 
     with col_kpi_table:
 
