@@ -9,7 +9,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from sklearn.preprocessing import MinMaxScaler
 
 #Loading in the data
-df = pd.read_csv('data/final_raw_data_file_febmar.csv')
+df = pd.read_csv('Data/final_raw_data_file_febmar.csv')
 df_visual = df.copy() #For sales visualizations
 
 #Extracting columns
@@ -218,7 +218,7 @@ df_display_final['AP_12'] = df_final['AP_12']
 
 #To CSV
 # Make sure the output folder exists
-os.makedirs("output", exist_ok=True)
+# os.makedirs("output", exist_ok=True)
 # Create a timestamped filename
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 filename = f"output/predicted_target_{timestamp}.csv"
